@@ -1,0 +1,7 @@
+
+function build(){
+    cd "$LOC/../llvm-build"
+    ninja
+}
+
+ivl_add_command "build" "LOC=\"$IVL_DOT_LOCATION\" build"
