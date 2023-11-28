@@ -4,4 +4,16 @@ function build(){
     ninja
 }
 
+function dump_json(){
+    $LOC/../llvm-build/bin/clang -cc1 -ast-dump=json -std=c++23 "$1"
+}
+
+function clang(){
+    $LOC/../llvm-build/bin/clang "$@"
+}
+
 ivl_add_command "build" "LOC=\"$IVL_DOT_LOCATION\" build"
+
+ivl_add_command "dump-json" "LOC=\"$IVL_DOT_LOCATION\" dump_json"
+
+ivl_add_command "clang" "LOC=\"$IVL_DOT_LOCATION\" clang"
