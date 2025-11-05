@@ -1441,6 +1441,13 @@ def Cold : InheritableAttr {
   let SimpleHandler = 1;
 }
 
+def IVLUFCS : InheritableAttr {
+  let Spellings = [CXX11<"ivl", "ufcs">];
+  let Subjects = SubjectList<[Function]>;
+  let Documentation = [Undocumented];
+  let SimpleHandler = 1;
+}
+
 def Common : InheritableAttr {
   let Spellings = [GCC<"common">];
   let Subjects = SubjectList<[Var]>;
