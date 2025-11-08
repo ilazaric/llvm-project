@@ -6516,10 +6516,6 @@ static void DiagnosedUnqualifiedCallsToStdFunctions(Sema &S,
 ExprResult Sema::ActOnCallExpr(Scope *Scope, Expr *Fn, SourceLocation LParenLoc,
                                MultiExprArg ArgExprs, SourceLocation RParenLoc,
                                Expr *ExecConfig) {
-  llvm::errs() << "IVL HERE: " << __func__ << ":" << __LINE__ << "\n";
-  Fn->dump();
-  llvm::errs() << "IVL HERE: " << __func__ << ":" << __LINE__ << "\n";
-  
   ExprResult Call =
       BuildCallExpr(Scope, Fn, LParenLoc, ArgExprs, RParenLoc, ExecConfig,
                     /*IsExecConfig=*/false, /*AllowRecovery=*/true);
@@ -6626,7 +6622,6 @@ ExprResult Sema::BuildCallExpr(Scope *Scope, Expr *Fn, SourceLocation LParenLoc,
                                         BuiltinCountedByRefKind::FunctionArg))
       return ExprError();
 
-  llvm::errs() << __LINE__ << " is it member fn? " << isa<UnresolvedMemberExpr>(Fn) << "\n";
   if (getLangOpts().CPlusPlus) {
     // If this is a pseudo-destructor expression, build the call immediately.
     if (isa<CXXPseudoDestructorExpr>(Fn)) {
@@ -6647,7 +6642,6 @@ ExprResult Sema::BuildCallExpr(Scope *Scope, Expr *Fn, SourceLocation LParenLoc,
         return ExprError();
       Fn = result.get();
     }
-    llvm::errs() << __LINE__ << " is it member fn? " << isa<UnresolvedMemberExpr>(Fn) << "\n";
 
     // Determine whether this is a dependent call inside a C++ template,
     // in which case we won't do any semantic analysis now.
@@ -6658,9 +6652,6 @@ ExprResult Sema::BuildCallExpr(Scope *Scope, Expr *Fn, SourceLocation LParenLoc,
                                           Context.DependentTy, VK_PRValue,
                                           RParenLoc, CurFPFeatureOverrides());
       } else {
-
-        llvm::errs() << __LINE__ << " is it member fn? " << isa<UnresolvedMemberExpr>(Fn) << "\n";
-
         tryImplicitlyCaptureThisIfImplicitMemberFunctionAccessWithDependentArgs(
             *this, dyn_cast<UnresolvedMemberExpr>(Fn->IgnoreParens()),
             Fn->getBeginLoc());
@@ -6683,7 +6674,6 @@ ExprResult Sema::BuildCallExpr(Scope *Scope, Expr *Fn, SourceLocation LParenLoc,
       return BuildCallToObjectOfClassType(Scope, Fn, LParenLoc, ArgExprs,
                                           RParenLoc);
 
-  llvm::errs() << __LINE__ << " is it member fn? " << isa<UnresolvedMemberExpr>(Fn) << "\n";
     if (Fn->getType() == Context.UnknownAnyTy) {
       ExprResult result = rebuildUnknownAnyFunction(*this, Fn);
       if (result.isInvalid())
@@ -6691,10 +6681,7 @@ ExprResult Sema::BuildCallExpr(Scope *Scope, Expr *Fn, SourceLocation LParenLoc,
       Fn = result.get();
     }
 
-  llvm::errs() << __LINE__ << " is it member fn? " << isa<UnresolvedMemberExpr>(Fn) << "\n";
     if (Fn->getType() == Context.BoundMemberTy) {
-  llvm::errs() << __LINE__ << " is it member fn? " << isa<UnresolvedMemberExpr>(Fn) << "\n";
-      llvm::errs() << "IVL " << __LINE__ << "\n";
       // TODO: gather free [[ivl::ufcs]] functions, do overload resolution on both?
       // NOTE: might be simpler to require one of the overload sets is empty for now
       // NOTE: apparently we get a recovery expression ~here if overload set empty
@@ -6710,7 +6697,6 @@ ExprResult Sema::BuildCallExpr(Scope *Scope, Expr *Fn, SourceLocation LParenLoc,
 
   // Check for overloaded calls.  This can happen even in C due to extensions.
   if (Fn->getType() == Context.OverloadTy) {
-    llvm::errs() << "IVL HERE: " << __func__ << ":" << __LINE__ << "\n";
     OverloadExpr::FindResult find = OverloadExpr::find(Fn);
 
     // TODO: return here

@@ -1806,9 +1806,6 @@ Parser::TryAnnotateName(CorrectionCandidateCallback *CCC,
   }
 
   case NameClassificationKind::OverloadSet:
-    llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
-    Classification.getExpression().get()->dump();
-    llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
     Tok.setKind(tok::annot_overload_set);
     setExprAnnotation(Tok, Classification.getExpression());
     Tok.setAnnotationEndLoc(NameLoc);

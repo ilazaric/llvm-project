@@ -16012,9 +16012,6 @@ ExprResult Sema::BuildCallToMemberFunction(Scope *S, Expr *MemExprE,
                                            SourceLocation RParenLoc,
                                            Expr *ExecConfig, bool IsExecConfig,
                                            bool AllowRecovery) {
-  llvm::errs() << "IVL entered " << __func__ << ":" << __LINE__ << "\n";
-  MemExprE->dump();
-  llvm::errs() << "IVL entered " << __func__ << ":" << __LINE__ << "\n";
   assert(MemExprE->getType() == Context.BoundMemberTy ||
          MemExprE->getType() == Context.OverloadTy);
 
@@ -16095,16 +16092,13 @@ ExprResult Sema::BuildCallToMemberFunction(Scope *S, Expr *MemExprE,
   bool HadMultipleCandidates = false;
   DeclAccessPair FoundDecl = DeclAccessPair::make(nullptr, AS_public);
   NestedNameSpecifier Qualifier = std::nullopt;
-  llvm::errs() << "IVL reached " << __func__ << ":" << __LINE__ << "\n";
   if (isa<MemberExpr>(NakedMemExpr)) {
-  llvm::errs() << "IVL reached " << __func__ << ":" << __LINE__ << "\n";
     MemExpr = cast<MemberExpr>(NakedMemExpr);
     Method = cast<CXXMethodDecl>(MemExpr->getMemberDecl());
     FoundDecl = MemExpr->getFoundDecl();
     Qualifier = MemExpr->getQualifier();
     UnbridgedCasts.restore();
   } else {
-  llvm::errs() << "IVL reached " << __func__ << ":" << __LINE__ << "\n";
     UnresolvedMemberExpr *UnresExpr = cast<UnresolvedMemberExpr>(NakedMemExpr);
     Qualifier = UnresExpr->getQualifier();
 

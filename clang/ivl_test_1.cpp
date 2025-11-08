@@ -22,9 +22,14 @@ void fn2(char) {
   std::cout << "not-a-[[ivl::ufcs]] free function\n";
 }
 
+// [[ivl::ufcs]] void fn3(const S&, auto) {
+//   std::cout << "[[ivl::ufcs]] free function template\n";
+// }  
+
 int main(){
   S s;
   s.fn(1);
   s.fn(2l);
+  s.fn('a');
   s.fn2(3l);
 }

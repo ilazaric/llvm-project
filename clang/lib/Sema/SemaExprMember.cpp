@@ -876,7 +876,6 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
                                const Scope *S,
                                bool SuppressQualifierCheck,
                                ActOnMemberAccessExtraArgs *ExtraArgs) {
-  llvm::errs() << "IVL ENTERED BuildMemberReferenceExpr\n";
   assert(!SS.isInvalid() && "nested-name-specifier cannot be invalid");
   // If the member wasn't found in the current instantiation, or if the
   // arrow operator was used with a dependent non-pointer object expression,
@@ -926,22 +925,22 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
     // NOTE: go through same recovery as before
 
     { // Try to find a [[ivl::ufcs]] free function.
-      llvm::errs() << "IVL Dumping MemberName\n";
-      MemberName.dump();
-      llvm::errs() << "IVL Dumping LookupResult\n";
-      R.dump();
+      // llvm::errs() << "IVL Dumping MemberName\n";
+      // MemberName.dump();
+      // llvm::errs() << "IVL Dumping LookupResult\n";
+      // R.dump();
       // llvm::errs() << "IVL Dumping ExtraArgs\n";
       // if (ExtraArgs) ExtraArgs->dump(); else llvm::errs() << "nullptr\n";
       // TODO: this returns empty set always for some reason
       // NOTE: this was wrong
       // auto E = ActOnNameClassifiedAsUndeclaredNonType(MemberName.getAsIdentifierInfo(), MemberLoc);
 
-      llvm::errs() << "IVL manual lookup result\n";
+      // llvm::errs() << "IVL manual lookup result\n";
       LookupResult Result(*this, MemberName.getAsIdentifierInfo(), MemberLoc, LookupOrdinaryName);
       LookupParsedName(Result, const_cast<Scope*>(S), const_cast<CXXScopeSpec*>(&SS), /*ObjectType=*/QualType());
 
-      llvm::errs() << "IVL manual lookup result:\n";
-      Result.dump();
+      // llvm::errs() << "IVL manual lookup result:\n";
+      // Result.dump();
       // if (E.isInvalid()) llvm::errs() << "broken\n"; else E.get()->dump();
 
       // TODO: LookupResult::Filter could be good to reduce to [[ivl::ufcs]] entities
@@ -954,14 +953,14 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
       }
       filter.done();
 
-      llvm::errs() << "IVL manual lookup result post filter:\n";
-      Result.dump();
+      // llvm::errs() << "IVL manual lookup result post filter:\n";
+      // Result.dump();
 
       // NOTE: filtered lookup looks good
       // TODO: perform overload resolution on them somehow
       // TODO: first step form a UnresolvedLookupExpr
 
-      llvm::errs() << "IVL Result kind: " << (int)Result.getResultKind() << "\n";
+      // llvm::errs() << "IVL Result kind: " << (int)Result.getResultKind() << "\n";
       // if (!Result.isOverloadedResult()){
       //   llvm::errs() << "IVL Result is not an overload set, skipping\n";
       //   goto ivl_ufcs_end;
@@ -973,12 +972,12 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
       Result.getLookupNameInfo(), /*ADL*/false, Result.begin(), Result.end(),
       /*KnownDependent=*/false, /*KnownInstantiationDependent=*/false);
 
-      llvm::errs() << "IVL Dumping IVL_ULE\n";
-      IVL_ULE->dump();
+      // llvm::errs() << "IVL Dumping IVL_ULE\n";
+      // IVL_ULE->dump();
       
       // auto E = ActOnCallExpr(Scope, IVL_ULE, SourceLocation(), ARGS, SourceLocation(), nullptr);
       return IVL_ULE; // this will be fun
-      assert(false && "stacktrace pls");
+      // assert(false && "stacktrace pls");
     }
 
   ivl_ufcs_end:;

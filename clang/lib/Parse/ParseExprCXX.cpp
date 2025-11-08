@@ -567,7 +567,6 @@ bool Parser::ParseOptionalCXXScopeSpecifier(
 ExprResult Parser::tryParseCXXIdExpression(CXXScopeSpec &SS,
                                            bool isAddressOfOperand,
                                            Token &Replacement) {
-  llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
   ExprResult E;
 
   // We may have already annotated this id-expression.
@@ -598,16 +597,12 @@ ExprResult Parser::tryParseCXXIdExpression(CXXScopeSpec &SS,
            "undeclared non-type annotation should be unqualified");
     IdentifierInfo *II = getIdentifierAnnotation(Tok);
     SourceLocation Loc = ConsumeAnnotationToken();
-    llvm::errs() << "IVL HERE annot_non_type_undeclared " << __func__ << ":" << __LINE__ << "\n";
     // UnresolvedLookupResult
     E = Actions.ActOnNameClassifiedAsUndeclaredNonType(II, Loc);
-    llvm::errs() << "IVL dumping weird result\n";
-    E.get()->dump();
     break;
   }
 
   default:
-    llvm::errs() << "IVL HERE default " << __func__ << ":" << __LINE__ << "\n";
     SourceLocation TemplateKWLoc;
     UnqualifiedId Name;
     if (ParseUnqualifiedId(SS, /*ObjectType=*/nullptr,
@@ -617,10 +612,6 @@ ExprResult Parser::tryParseCXXIdExpression(CXXScopeSpec &SS,
                            /*AllowConstructorName=*/false,
                            /*AllowDeductionGuide=*/false, &TemplateKWLoc, Name))
       return ExprError();
-
-    llvm::errs() << "IVL dumping Name " << __func__ << ":" << __LINE__ << "\n";
-    Name.getSourceRange().dump(Actions.getSourceManager());
-    // llvm::errs() << Name << "\n";
 
     // This is only the direct operand of an & operator if it is not
     // followed by a postfix-expression suffix.
