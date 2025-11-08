@@ -25,6 +25,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <source_location>
 
 namespace clang {
 
@@ -212,10 +213,10 @@ public:
   };
 
   /// Emit a diagnostic.
-  SemaDiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID);
+  SemaDiagnosticBuilder Diag(SourceLocation Loc, unsigned DiagID, std::source_location loc = std::source_location::current());
 
   /// Emit a partial diagnostic.
-  SemaDiagnosticBuilder Diag(SourceLocation Loc, const PartialDiagnostic &PD);
+  SemaDiagnosticBuilder Diag(SourceLocation Loc, const PartialDiagnostic &PD, std::source_location loc = std::source_location::current());
 
   /// Emit a compatibility diagnostic.
   SemaDiagnosticBuilder DiagCompat(SourceLocation Loc, unsigned CompatDiagId);

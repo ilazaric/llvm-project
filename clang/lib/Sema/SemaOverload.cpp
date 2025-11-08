@@ -13208,6 +13208,7 @@ void OverloadCandidateSet::NoteCandidates(
   {
     Sema::DeferDiagsRAII RAII{S, shouldDeferDiags(S, Args, OpLoc)};
     S.Diag(PD.first, PD.second);
+    // assert(false && "just want the stacktrace");
   }
 
   // In WebAssembly we don't want to emit further diagnostics if a table is
@@ -14244,6 +14245,11 @@ void Sema::AddOverloadedCallCandidates(UnresolvedLookupExpr *ULE,
   }
 #endif
 
+  // NOTE: here we seem to populate the overload set
+
+  llvm::errs() << "Dumping ULE:\n";
+  ULE->dump();
+
   // It would be nice to avoid this copy.
   TemplateArgumentListInfo TABuffer;
   TemplateArgumentListInfo *ExplicitTemplateArgs = nullptr;
@@ -14252,12 +14258,17 @@ void Sema::AddOverloadedCallCandidates(UnresolvedLookupExpr *ULE,
     ExplicitTemplateArgs = &TABuffer;
   }
 
+  // NOTE: this iteration seems to find all overload candidates
   for (UnresolvedLookupExpr::decls_iterator I = ULE->decls_begin(),
-         E = ULE->decls_end(); I != E; ++I)
+         E = ULE->decls_end(); I != E; ++I) {
     AddOverloadedCallCandidate(*this, I.getPair(), ExplicitTemplateArgs, Args,
                                CandidateSet, PartialOverloading,
                                /*KnownValid*/ true);
+    // llvm::errs() << "added one " << __LINE__ << "\n";
+  }
 
+  // TODO: need to understand this
+  // NOTE: memfn matching ufcs freefns would probably go through this?
   if (ULE->requiresADL())
     AddArgumentDependentLookupCandidates(ULE->getName(), ULE->getExprLoc(),
                                          Args, ExplicitTemplateArgs,
@@ -14558,6 +14569,8 @@ bool Sema::buildOverloadedCallSet(Scope *S, Expr *Fn,
     return true;
   }
 
+  // ULE->dump();
+
   // Add the functions denoted by the callee to the set of candidate
   // functions, including those from argument-dependent lookup.
   AddOverloadedCallCandidates(ULE, Args, *CandidateSet);
@@ -14772,9 +14785,17 @@ ExprResult Sema::BuildOverloadedCallExpr(Scope *S, Expr *Fn,
   OverloadCandidateSet CandidateSet(Fn->getExprLoc(), CSK);
   ExprResult result;
 
+  // TODO: return here
+  // NOTE: this handles both free and member functions
   if (buildOverloadedCallSet(S, Fn, ULE, Args, LParenLoc, &CandidateSet,
                              &result))
     return result;
+
+  llvm::errs() << "Dumping overload set:\n";
+  for (auto&& Candidate : CandidateSet)
+    Candidate.Function->dump(llvm::errs());
+  llvm::errs() << "Done dumping overload set\n";
+  // assert(false);
 
   // If the user handed us something like `(&Foo)(Bar)`, we need to ensure that
   // functions that aren't addressible are considered unviable.
@@ -15991,6 +16012,9 @@ ExprResult Sema::BuildCallToMemberFunction(Scope *S, Expr *MemExprE,
                                            SourceLocation RParenLoc,
                                            Expr *ExecConfig, bool IsExecConfig,
                                            bool AllowRecovery) {
+  llvm::errs() << "IVL entered " << __func__ << ":" << __LINE__ << "\n";
+  MemExprE->dump();
+  llvm::errs() << "IVL entered " << __func__ << ":" << __LINE__ << "\n";
   assert(MemExprE->getType() == Context.BoundMemberTy ||
          MemExprE->getType() == Context.OverloadTy);
 
@@ -16071,13 +16095,16 @@ ExprResult Sema::BuildCallToMemberFunction(Scope *S, Expr *MemExprE,
   bool HadMultipleCandidates = false;
   DeclAccessPair FoundDecl = DeclAccessPair::make(nullptr, AS_public);
   NestedNameSpecifier Qualifier = std::nullopt;
+  llvm::errs() << "IVL reached " << __func__ << ":" << __LINE__ << "\n";
   if (isa<MemberExpr>(NakedMemExpr)) {
+  llvm::errs() << "IVL reached " << __func__ << ":" << __LINE__ << "\n";
     MemExpr = cast<MemberExpr>(NakedMemExpr);
     Method = cast<CXXMethodDecl>(MemExpr->getMemberDecl());
     FoundDecl = MemExpr->getFoundDecl();
     Qualifier = MemExpr->getQualifier();
     UnbridgedCasts.restore();
   } else {
+  llvm::errs() << "IVL reached " << __func__ << ":" << __LINE__ << "\n";
     UnresolvedMemberExpr *UnresExpr = cast<UnresolvedMemberExpr>(NakedMemExpr);
     Qualifier = UnresExpr->getQualifier();
 

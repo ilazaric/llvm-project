@@ -59,7 +59,8 @@ SemaBase::SemaDiagnosticBuilder::getDeviceDeferredDiags() const {
 }
 
 Sema::SemaDiagnosticBuilder SemaBase::Diag(SourceLocation Loc,
-                                           unsigned DiagID) {
+                                           unsigned DiagID, std::source_location loc) {
+  llvm::errs() << "IVL Diagnostic invoked from " << loc.file_name() << ":" << loc.line() << " `" << loc.function_name() << "`\n";
   bool IsError =
       getDiagnostics().getDiagnosticIDs()->isDefaultMappingAsError(DiagID);
   bool ShouldDefer = getLangOpts().CUDA && getLangOpts().GPUDeferDiag &&
@@ -83,8 +84,8 @@ Sema::SemaDiagnosticBuilder SemaBase::Diag(SourceLocation Loc,
 }
 
 Sema::SemaDiagnosticBuilder SemaBase::Diag(SourceLocation Loc,
-                                           const PartialDiagnostic &PD) {
-  return Diag(Loc, PD.getDiagID()) << PD;
+                                           const PartialDiagnostic &PD, std::source_location loc) {
+  return Diag(Loc, PD.getDiagID(), loc) << PD;
 }
 
 SemaBase::SemaDiagnosticBuilder SemaBase::DiagCompat(SourceLocation Loc,

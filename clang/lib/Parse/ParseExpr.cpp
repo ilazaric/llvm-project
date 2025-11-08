@@ -727,6 +727,11 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
   auto SavedType = PreferredType;
   NotCastExpr = false;
 
+  llvm::errs() << "IVL token kind: " << SavedKind << "\n";
+  llvm::errs() << "IVL identifier kind: " << tok::identifier << "\n";
+  llvm::errs() << "IVL annot_overload_set kind: " << tok::annot_overload_set << "\n";
+  llvm::errs() << "IVL annot_non_type_undeclared kind: " << tok::annot_non_type_undeclared << "\n";
+
   // Are postfix-expression suffix operators permitted after this
   // cast-expression? If not, and we find some, we'll parse them anyway and
   // diagnose them.
@@ -800,12 +805,12 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
 
     Res = Actions.ActOnNumericConstant(Tok, /*UDLScope*/getCurScope());
     ConsumeToken();
-    break;
+    break; // TODO: doesn't seem to allow for suffix, maybe wrong
 
   case tok::kw_true:
   case tok::kw_false:
     Res = ParseCXXBoolLiteral();
-    break;
+    break; // TODO: doesn't seem to allow for suffix, maybe wrong
 
   case tok::kw___objc_yes:
   case tok::kw___objc_no:
@@ -822,19 +827,26 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
     Res = Actions.ActOnCXXNullPtrLiteral(ConsumeToken());
     break;
 
+    // TODO: maybe i care about this
   case tok::annot_primary_expr:
   case tok::annot_overload_set:
+    llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
+    llvm::errs() << __LINE__ << ": "; if (!Res.isInvalid()) Res.get()->dump();
     Res = getExprAnnotation(Tok);
+    llvm::errs() << __LINE__ << ": "; if (!Res.isInvalid()) Res.get()->dump();
     if (!Res.isInvalid() && Tok.getKind() == tok::annot_overload_set)
       Res = Actions.ActOnNameClassifiedAsOverloadSet(getCurScope(), Res.get());
+    llvm::errs() << __LINE__ << ": "; if (!Res.isInvalid()) Res.get()->dump();
     ConsumeAnnotationToken();
     if (!Res.isInvalid() && Tok.is(tok::less))
       checkPotentialAngleBracket(Res);
+    llvm::errs() << __LINE__ << ": "; if (!Res.isInvalid()) Res.get()->dump();
     break;
 
   case tok::annot_non_type:
   case tok::annot_non_type_dependent:
   case tok::annot_non_type_undeclared: {
+    llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
     CXXScopeSpec SS;
     Token Replacement;
     Res = tryParseCXXIdExpression(SS, isAddressOfOperand, Replacement);
@@ -1012,6 +1024,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
       Validator.WantRemainingKeywords = Tok.isNot(tok::r_paren);
     }
     Name.setIdentifier(&II, ILoc);
+    llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
     Res = Actions.ActOnIdExpression(
         getCurScope(), ScopeSpec, TemplateKWLoc, Name, Tok.is(tok::l_paren),
         isAddressOfOperand, &Validator,
@@ -1582,6 +1595,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
     // parsed.
     return Res;
 
+  // TODO: go through this
   if (!AllowSuffix) {
     // FIXME: Don't parse a primary-expression suffix if we encountered a parse
     // error already.
@@ -1641,11 +1655,15 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
   // parsed, see if there are any postfix-expression pieces here.
   SourceLocation Loc;
   auto SavedType = PreferredType;
+  Expr* IVL_BLA = nullptr;
   while (true) {
+    llvm::errs() << "IVL dumping LHS at start\n";
+    LHS.get()->dump();
     // Each iteration relies on preferred type for the whole expression.
     PreferredType = SavedType;
     switch (Tok.getKind()) {
     case tok::code_completion:
+      {
       if (InMessageExpression)
         return LHS;
 
@@ -1653,6 +1671,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
       Actions.CodeCompletion().CodeCompletePostfixExpression(
           getCurScope(), LHS, PreferredType.get(Tok.getLocation()));
       return ExprError();
+      }
 
     case tok::identifier:
       // If we see identifier: after an expression, and we're not already in a
@@ -1833,11 +1852,13 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
           else
             ExecConfig = ECResult.get();
         }
-      } else {
+      }
+      else {
         PT.consumeOpen();
         Loc = PT.getOpenLocation();
       }
 
+      // TODO: extend this with the pre-tok::period LHS
       ExprVector ArgExprs;
       auto RunSignatureHelp = [&]() -> QualType {
         QualType PreferredType =
@@ -1866,13 +1887,15 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
       // Match the ')'.
       if (LHS.isInvalid()) {
         SkipUntil(tok::r_paren, StopAtSemi);
-      } else if (ExpressionListIsInvalid) {
+      }
+      else if (ExpressionListIsInvalid) {
         Expr *Fn = LHS.get();
         ArgExprs.insert(ArgExprs.begin(), Fn);
         LHS = Actions.CreateRecoveryExpr(Fn->getBeginLoc(), Tok.getLocation(),
                                          ArgExprs);
         SkipUntil(tok::r_paren, StopAtSemi);
-      } else if (Tok.isNot(tok::r_paren)) {
+      }
+      else if (Tok.isNot(tok::r_paren)) {
         bool HadErrors = false;
         if (LHS.get()->containsErrors())
           HadErrors = true;
@@ -1887,9 +1910,14 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         else
           PT.consumeClose();
         LHS = ExprError();
-      } else {
+      }
+      else {
+        llvm::errs() << "IVL dumping LHS\n";
+        LHS.get()->dump();
         Expr *Fn = LHS.get();
         SourceLocation RParLoc = Tok.getLocation();
+        // TODO: think more on next line
+        if (IVL_BLA) ArgExprs.insert(ArgExprs.begin(), IVL_BLA);
         LHS = Actions.ActOnCallExpr(getCurScope(), Fn, Loc, ArgExprs, RParLoc,
                                     ExecConfig);
         if (LHS.isInvalid()) {
@@ -1904,6 +1932,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     }
     case tok::arrow:
     case tok::period: {
+      llvm::errs() << "IVL entering expr '.'\n";
       // postfix-expression: p-e '->' template[opt] id-expression
       // postfix-expression: p-e '.' template[opt] id-expression
       tok::TokenKind OpKind = Tok.getKind();
@@ -1914,8 +1943,10 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
       bool MayBePseudoDestructor = false;
       Expr* OrigLHS = !LHS.isInvalid() ? LHS.get() : nullptr;
 
+      // TODO
       PreferredType.enterMemAccess(Actions, Tok.getLocation(), OrigLHS);
 
+      // TODO: IMPORTANT
       if (getLangOpts().CPlusPlus && !LHS.isInvalid()) {
         Expr *Base = OrigLHS;
         const Type* BaseType = Base->getType().getTypePtrOrNull();
@@ -1928,9 +1959,15 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
           return ParsePostfixExpressionSuffix(Base);
         }
 
+        llvm::errs() << "IVL right before ActOnStartCXXMemberReference\n";
         LHS = Actions.ActOnStartCXXMemberReference(getCurScope(), Base, OpLoc,
                                                    OpKind, ObjectType,
                                                    MayBePseudoDestructor);
+
+        llvm::errs() << "IVL WTF AM I DOING\n";
+        if (LHS.isInvalid()) llvm::errs() << "broken\n"; else LHS.get()->dump();
+        llvm::errs() << "IVL WTF AM I DOING\n";
+        
         if (LHS.isInvalid()) {
           // Clang will try to perform expression based completion as a
           // fallback, which is confusing in case of member references. So we
@@ -1941,6 +1978,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
           }
           break;
         }
+        llvm::errs() << "IVL Reached ParseOptionalCXXScopeSpecifier\n";
         ParseOptionalCXXScopeSpecifier(
             SS, ObjectType, LHS.get() && LHS.get()->containsErrors(),
             /*EnteringContext=*/false, &MayBePseudoDestructor);
@@ -2003,7 +2041,8 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         IdentifierInfo *Id = Tok.getIdentifierInfo();
         SourceLocation Loc = ConsumeToken();
         Name.setIdentifier(Id, Loc);
-      } else if (ParseUnqualifiedId(
+      }
+      else { if (ParseUnqualifiedId(
                      SS, ObjectType, LHS.get() && LHS.get()->containsErrors(),
                      /*EnteringContext=*/false,
                      /*AllowDestructorName=*/true,
@@ -2011,13 +2050,24 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
                      getLangOpts().MicrosoftExt && SS.isNotEmpty(),
                      /*AllowDeductionGuide=*/false, &TemplateKWLoc, Name)) {
         LHS = ExprError();
-      }
+        }}
 
-      if (!LHS.isInvalid())
+      if (!LHS.isInvalid()) {
+        llvm::errs() << "IVL ABOUT TO ENTER ActOnMemberAccessExpr\n";
+        llvm::errs() << "IVL DUMPING LHS BEFORE ActOnMemberAccessExpr\n";
+        if (LHS.isInvalid()) llvm::errs() << "broken\n"; else LHS.get()->dump();
+        IVL_BLA = LHS.get();
+        // NOTE: this goes from DeclRefExpr to UnresolvedMemberExpr
+        // NOTE: we would make it possibly go to UnresolvedLookupExpr
+        // TODO: where do i store the expression before tok::period ?
         LHS = Actions.ActOnMemberAccessExpr(getCurScope(), LHS.get(), OpLoc,
                                             OpKind, SS, TemplateKWLoc, Name,
                                  CurParsedObjCImpl ? CurParsedObjCImpl->Dcl
                                                    : nullptr);
+        if (LHS.isInvalid() || !isa<UnresolvedLookupExpr>(LHS.get())) IVL_BLA = nullptr;
+        llvm::errs() << "IVL DUMPING LHS AFTER ActOnMemberAccessExpr\n";
+        if (LHS.isInvalid()) llvm::errs() << "broken\n"; else LHS.get()->dump();
+      }
       if (!LHS.isInvalid()) {
         if (Tok.is(tok::less))
           checkPotentialAngleBracket(LHS);

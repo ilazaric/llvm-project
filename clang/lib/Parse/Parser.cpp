@@ -1728,6 +1728,12 @@ Parser::TryAnnotateName(CorrectionCandidateCallback *CCC,
   Sema::NameClassification Classification = Actions.ClassifyName(
       getCurScope(), SS, Name, NameLoc, Next, SS.isEmpty() ? CCC : nullptr);
 
+  // NOTE: Classification has the overload set already
+
+  // llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
+  // Classification.getExpression().get()->dump();
+  // llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
+
   // If name lookup found nothing and we guessed that this was a template name,
   // double-check before committing to that interpretation. C++20 requires that
   // we interpret this as a template-id if it can be, but if it can't be, then
@@ -1741,6 +1747,8 @@ Parser::TryAnnotateName(CorrectionCandidateCallback *CCC,
         Actions.ClassifyName(getCurScope(), SS, Name, NameLoc, FakeNext,
                              SS.isEmpty() ? CCC : nullptr);
   }
+
+  // NOTE: Classification has the overload set already
 
   switch (Classification.getKind()) {
   case NameClassificationKind::Error:
@@ -1798,6 +1806,9 @@ Parser::TryAnnotateName(CorrectionCandidateCallback *CCC,
   }
 
   case NameClassificationKind::OverloadSet:
+    llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
+    Classification.getExpression().get()->dump();
+    llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
     Tok.setKind(tok::annot_overload_set);
     setExprAnnotation(Tok, Classification.getExpression());
     Tok.setAnnotationEndLoc(NameLoc);

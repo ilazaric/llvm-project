@@ -876,6 +876,7 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
                                const Scope *S,
                                bool SuppressQualifierCheck,
                                ActOnMemberAccessExtraArgs *ExtraArgs) {
+  llvm::errs() << "IVL ENTERED BuildMemberReferenceExpr\n";
   assert(!SS.isInvalid() && "nested-name-specifier cannot be invalid");
   // If the member wasn't found in the current instantiation, or if the
   // arrow operator was used with a dependent non-pointer object expression,
@@ -919,6 +920,69 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
         << isa<CXXDestructorDecl>(FD);
 
   if (R.empty()) {
+    // TODO: here we tried to access a member, and nothing was found
+    // TODO: we want to introduce [[ivl::ufcs]] free function lookup instead
+    // NOTE: if the free function overload set turns up empty,
+    // NOTE: go through same recovery as before
+
+    { // Try to find a [[ivl::ufcs]] free function.
+      llvm::errs() << "IVL Dumping MemberName\n";
+      MemberName.dump();
+      llvm::errs() << "IVL Dumping LookupResult\n";
+      R.dump();
+      // llvm::errs() << "IVL Dumping ExtraArgs\n";
+      // if (ExtraArgs) ExtraArgs->dump(); else llvm::errs() << "nullptr\n";
+      // TODO: this returns empty set always for some reason
+      // NOTE: this was wrong
+      // auto E = ActOnNameClassifiedAsUndeclaredNonType(MemberName.getAsIdentifierInfo(), MemberLoc);
+
+      llvm::errs() << "IVL manual lookup result\n";
+      LookupResult Result(*this, MemberName.getAsIdentifierInfo(), MemberLoc, LookupOrdinaryName);
+      LookupParsedName(Result, const_cast<Scope*>(S), const_cast<CXXScopeSpec*>(&SS), /*ObjectType=*/QualType());
+
+      llvm::errs() << "IVL manual lookup result:\n";
+      Result.dump();
+      // if (E.isInvalid()) llvm::errs() << "broken\n"; else E.get()->dump();
+
+      // TODO: LookupResult::Filter could be good to reduce to [[ivl::ufcs]] entities
+      auto filter = Result.makeFilter();
+      while (filter.hasNext()){
+        auto decl = filter.next();
+        if (decl->hasAttr<IVLUFCSAttr>()) continue;
+
+        filter.erase();
+      }
+      filter.done();
+
+      llvm::errs() << "IVL manual lookup result post filter:\n";
+      Result.dump();
+
+      // NOTE: filtered lookup looks good
+      // TODO: perform overload resolution on them somehow
+      // TODO: first step form a UnresolvedLookupExpr
+
+      llvm::errs() << "IVL Result kind: " << (int)Result.getResultKind() << "\n";
+      // if (!Result.isOverloadedResult()){
+      //   llvm::errs() << "IVL Result is not an overload set, skipping\n";
+      //   goto ivl_ufcs_end;
+      // }
+
+      // NOTE: here it is indeed an overload set, time to perform overload resolution somehow
+      auto IVL_ULE = UnresolvedLookupExpr::Create(
+      Context, Result.getNamingClass(), SS.getWithLocInContext(Context),
+      Result.getLookupNameInfo(), /*ADL*/false, Result.begin(), Result.end(),
+      /*KnownDependent=*/false, /*KnownInstantiationDependent=*/false);
+
+      llvm::errs() << "IVL Dumping IVL_ULE\n";
+      IVL_ULE->dump();
+      
+      // auto E = ActOnCallExpr(Scope, IVL_ULE, SourceLocation(), ARGS, SourceLocation(), nullptr);
+      return IVL_ULE; // this will be fun
+      assert(false && "stacktrace pls");
+    }
+
+  ivl_ufcs_end:;
+    
     ExprResult RetryExpr = ExprError();
     if (ExtraArgs && !IsArrow && BaseExpr && !BaseExpr->isTypeDependent()) {
       SFINAETrap Trap(*this, true);
@@ -929,6 +993,8 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
                                                MayBePseudoDestructor);
       if (RetryExpr.isUsable() && !Trap.hasErrorOccurred()) {
         CXXScopeSpec TempSS(SS);
+        // TODO: undestand this, looks like need to do free function lookup after this
+        // TODO-x: this is just for diagnostics, nevermind
         RetryExpr = ActOnMemberAccessExpr(
             ExtraArgs->S, RetryExpr.get(), OpLoc, tok::arrow, TempSS,
             TemplateKWLoc, ExtraArgs->Id, ExtraArgs->ObjCImpDecl);
@@ -946,7 +1012,7 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
       Diag(OpLoc, diag::err_no_member_overloaded_arrow)
           << MemberName << DC << FixItHint::CreateReplacement(OpLoc, "->");
     else
-      Diag(R.getNameLoc(), diag::err_no_member)
+      Diag(R.getNameLoc(), diag::err_no_member) // TODO: this triggers in expr.no-member-fn case
           << MemberName << DC
           << (SS.isSet()
                   ? SS.getRange()

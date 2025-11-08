@@ -6884,19 +6884,29 @@ static void noteOperatorArrows(Sema &S,
   }
 }
 
+// NOTE: this doesnt seem to do anything interesting
 ExprResult Sema::ActOnStartCXXMemberReference(Scope *S, Expr *Base,
                                               SourceLocation OpLoc,
                                               tok::TokenKind OpKind,
                                               ParsedType &ObjectType,
                                               bool &MayBePseudoDestructor) {
   // Since this might be a postfix expression, get rid of ParenListExprs.
+  // llvm::errs() << "IVL big dumping\n";
+  // Base->dump();
+  // llvm::errs() << "IVL big dumping\n";
   ExprResult Result = MaybeConvertParenListExprToParenExpr(S, Base);
   if (Result.isInvalid()) return ExprError();
   Base = Result.get();
+  // llvm::errs() << "IVL big dumping\n";
+  // Base->dump();
+  // llvm::errs() << "IVL big dumping\n";
 
   Result = CheckPlaceholderExpr(Base);
   if (Result.isInvalid()) return ExprError();
   Base = Result.get();
+  // llvm::errs() << "IVL big dumping\n";
+  // Base->dump();
+  // llvm::errs() << "IVL big dumping\n";
 
   QualType BaseType = Base->getType();
   MayBePseudoDestructor = false;
@@ -7025,6 +7035,9 @@ ExprResult Sema::ActOnStartCXXMemberReference(Scope *S, Expr *Base,
   //   type C (or of pointer to a class type C), the unqualified-id is looked
   //   up in the scope of class C. [...]
   ObjectType = ParsedType::make(BaseType);
+  // llvm::errs() << "IVL big dumping\n";
+  // Base->dump();
+  // llvm::errs() << "IVL big dumping\n";
   return Base;
 }
 

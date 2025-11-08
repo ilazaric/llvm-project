@@ -910,9 +910,20 @@ Sema::NameClassification Sema::ClassifyName(Scope *S, CXXScopeSpec &SS,
     return NameClassification::Unknown();
   }
 
+  // NOTE: this seems to find a bunch of stuff, not just what we care about
   LookupResult Result(*this, Name, NameLoc, LookupOrdinaryName);
+
+  llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
+  Result.dump();
+  llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
+
+  // NOTE: this actually finds entities
   LookupParsedName(Result, S, &SS, /*ObjectType=*/QualType(),
                    /*AllowBuiltinCreation=*/!CurMethod);
+
+  llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
+  Result.dump();
+  llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
 
   if (SS.isInvalid())
     return NameClassification::Error();
@@ -1276,6 +1287,8 @@ Corrected:
 
   // Otherwise, this is an overload set that we will need to resolve later.
   Result.suppressDiagnostics();
+
+  llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
   return NameClassification::OverloadSet(UnresolvedLookupExpr::Create(
       Context, Result.getNamingClass(), SS.getWithLocInContext(Context),
       Result.getLookupNameInfo(), ADL, Result.begin(), Result.end(),
@@ -1287,7 +1300,11 @@ Sema::ActOnNameClassifiedAsUndeclaredNonType(IdentifierInfo *Name,
                                              SourceLocation NameLoc) {
   assert(getLangOpts().CPlusPlus && "ADL-only call in C?");
   CXXScopeSpec SS;
+  // NOTE: this does ADL?
+  // TOD: this is important, go back to this
   LookupResult Result(*this, Name, NameLoc, LookupOrdinaryName);
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " Dumping Result\n";
+  Result.dump();
   return BuildDeclarationNameExpr(SS, Result, /*ADL=*/true);
 }
 
