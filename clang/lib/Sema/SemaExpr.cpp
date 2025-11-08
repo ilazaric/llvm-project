@@ -6575,42 +6575,42 @@ ExprResult Sema::BuildCallExpr(Scope *Scope, Expr *Fn, SourceLocation LParenLoc,
     return ExprError();
   Fn = Result.get();
 
-  auto ivl_describe = [](Expr* Fn){
-    if (Fn == nullptr){
-      llvm::errs() << "Provided Fn is nullptr\n";
-      return;
-    }
-    llvm::errs() << "Dumping Fn\n";
-    Fn->dump();
-    if (!isa<OverloadExpr>(Fn)){
-      llvm::errs() << "Provided Fn is not an OverloadExpr\n";
-      return;
-    }
-    llvm::errs() << "Dumping Fn.NameInfo\n";
-    llvm::errs() << ((OverloadExpr*)Fn)->getNameInfo() << "\n";
-    llvm::errs() << "Dumping Fn.Qualifier\n";
-    ((OverloadExpr*)Fn)->getQualifier().dump();
-    llvm::errs() << "\n";
-  };
+  // auto ivl_describe = [](Expr* Fn){
+  //   if (Fn == nullptr){
+  //     llvm::errs() << "Provided Fn is nullptr\n";
+  //     return;
+  //   }
+  //   llvm::errs() << "Dumping Fn\n";
+  //   Fn->dump();
+  //   if (!isa<OverloadExpr>(Fn)){
+  //     llvm::errs() << "Provided Fn is not an OverloadExpr\n";
+  //     return;
+  //   }
+  //   llvm::errs() << "Dumping Fn.NameInfo\n";
+  //   llvm::errs() << ((OverloadExpr*)Fn)->getNameInfo() << "\n";
+  //   llvm::errs() << "Dumping Fn.Qualifier\n";
+  //   ((OverloadExpr*)Fn)->getQualifier().dump();
+  //   llvm::errs() << "\n";
+  // };
 
-  auto transformer = [](Expr* Fn) -> Expr* {
-    if (!isa<UnresolvedMemberExpr>(Fn) &&
-        !isa<UnresolvedLookupExpr>(Fn)) return nullptr;
+  // auto transformer = [](Expr* Fn) -> Expr* {
+  //   if (!isa<UnresolvedMemberExpr>(Fn) &&
+  //       !isa<UnresolvedLookupExpr>(Fn)) return nullptr;
     
-    if (isa<UnresolvedMemberExpr>(Fn)){
-      // TODO: build a UnresolvedLookupExpr
-      llvm_unreachable("not implemented");
-    }
+  //   if (isa<UnresolvedMemberExpr>(Fn)){
+  //     // TODO: build a UnresolvedLookupExpr
+  //     llvm_unreachable("not implemented");
+  //   }
 
-    if (isa<UnresolvedLookupExpr>(Fn)){
-      // TODO: build a UnresolvedMemberExpr
-      llvm_unreachable("not implemented");
-    }
+  //   if (isa<UnresolvedLookupExpr>(Fn)){
+  //     // TODO: build a UnresolvedMemberExpr
+  //     llvm_unreachable("not implemented");
+  //   }
 
-    llvm_unreachable("womp womp");
-  };
+  //   llvm_unreachable("womp womp");
+  // };
 
-  ivl_describe(Fn);
+  // ivl_describe(Fn);
 
   if (CheckArgsForPlaceholders(ArgExprs))
     return ExprError();

@@ -14247,8 +14247,8 @@ void Sema::AddOverloadedCallCandidates(UnresolvedLookupExpr *ULE,
 
   // NOTE: here we seem to populate the overload set
 
-  llvm::errs() << "Dumping ULE:\n";
-  ULE->dump();
+  // llvm::errs() << "Dumping ULE:\n";
+  // ULE->dump();
 
   // It would be nice to avoid this copy.
   TemplateArgumentListInfo TABuffer;
@@ -14791,10 +14791,10 @@ ExprResult Sema::BuildOverloadedCallExpr(Scope *S, Expr *Fn,
                              &result))
     return result;
 
-  llvm::errs() << "Dumping overload set:\n";
-  for (auto&& Candidate : CandidateSet)
-    Candidate.Function->dump(llvm::errs());
-  llvm::errs() << "Done dumping overload set\n";
+  // llvm::errs() << "Dumping overload set:\n";
+  // for (auto&& Candidate : CandidateSet)
+  //   Candidate.Function->dump(llvm::errs());
+  // llvm::errs() << "Done dumping overload set\n";
   // assert(false);
 
   // If the user handed us something like `(&Foo)(Bar)`, we need to ensure that
