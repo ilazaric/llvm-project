@@ -1645,7 +1645,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
   auto SavedType = PreferredType;
   Expr* IVL_BLA = nullptr;
   while (true) {
-    LHS.get()->dump();
+    // LHS.get()->dump();
     // Each iteration relies on preferred type for the whole expression.
     PreferredType = SavedType;
     switch (Tok.getKind()) {
@@ -1899,7 +1899,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
         LHS = ExprError();
       }
       else {
-        LHS.get()->dump();
+        // LHS.get()->dump();
         Expr *Fn = LHS.get();
         SourceLocation RParLoc = Tok.getLocation();
         // TODO: think more on next line
