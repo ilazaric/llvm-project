@@ -943,10 +943,22 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
       // Result.dump();
       // if (E.isInvalid()) llvm::errs() << "broken\n"; else E.get()->dump();
 
-      // TODO: LookupResult::Filter could be good to reduce to [[ivl::ufcs]] entities
+      // TODO: this erroneously filters out:
+      // [[ivl::ufcs]] void fn3(const S&, auto);
+      // AST:
+      // FunctionTemplateDecl 0x6357a811dee8 <<invalid sloc>, ivl_test_1.cpp:14:38> col:20 fn3
+      // |-TemplateTypeParmDecl 0x6357a811dbc8 <col:34, col:38> col:38 implicit class depth 0 index 0 auto:1
+      // `-FunctionDecl 0x6357a811de38 <col:15, col:38> col:20 fn3 'void (const S &, auto)'
+      //   |-ParmVarDecl 0x6357a811db28 <col:24, col:31> col:32 'const S &'
+      //   |-ParmVarDecl 0x6357a811dcc0 <col:34> col:38 'auto'
+      //   `-IVLUFCSAttr 0x6357a811df50 <col:3, col:8>
       auto filter = Result.makeFilter();
       while (filter.hasNext()){
         auto decl = filter.next();
+        if (isa<FunctionTemplateDecl>(decl)){
+          decl = cast<FunctionTemplateDecl>(decl)->getTemplatedDecl();
+        }
+        
         if (decl->hasAttr<IVLUFCSAttr>()) continue;
 
         filter.erase();
