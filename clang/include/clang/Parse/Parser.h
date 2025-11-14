@@ -27,6 +27,7 @@
 #include "llvm/Support/SaveAndRestore.h"
 #include <optional>
 #include <stack>
+#include <stacktrace>
 
 namespace clang {
 class PragmaHandler;
@@ -4075,7 +4076,7 @@ private:
   ///         argument-expression ...[opt]
   ///         argument-expression-list ',' assignment-expression ...[opt]
   /// \endverbatim
-  ExprResult ParsePostfixExpressionSuffix(ExprResult LHS);
+  ExprResult ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc = std::source_location::current());
 
   /// Parse a sizeof or alignof expression.
   ///

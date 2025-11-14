@@ -935,6 +935,18 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
       // NOTE: this was wrong
       // auto E = ActOnNameClassifiedAsUndeclaredNonType(MemberName.getAsIdentifierInfo(), MemberLoc);
 
+      {
+        UnqualifiedId Name;
+        Name.setIdentifier(MemberName.getAsIdentifierInfo(),
+                           MemberLoc);
+
+        // TODO: this doesn't filter down to [[ivl::ufcs]] stuff
+        auto Foo = ActOnIdExpression(const_cast<Scope*>(S), const_cast<CXXScopeSpec&>(SS), SourceLocation(), Name, true, false, nullptr, false, nullptr);
+      if (Foo.isInvalid())
+        goto ivl_ufcs_end;
+      return Foo;
+      }
+
       // llvm::errs() << "IVL manual lookup result\n";
       LookupResult Result(*this, MemberName.getAsIdentifierInfo(), MemberLoc, LookupOrdinaryName);
       LookupParsedName(Result, const_cast<Scope*>(S), const_cast<CXXScopeSpec*>(&SS), /*ObjectType=*/QualType());
@@ -965,8 +977,22 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
       }
       filter.done();
 
-      // llvm::errs() << "IVL manual lookup result post filter:\n";
-      // Result.dump();
+      // if (result.isOverloadedResult()){
+      //   return UnresolvedLookupExpr::Create(
+      // Context, Result.getNamingClass(), SS.getWithLocInContext(Context),
+      // Result.getLookupNameInfo(), /*ADL*/false, Result.begin(), Result.end(),
+      // /*KnownDependent=*/false, /*KnownInstantiationDependent=*/false);
+      // }
+
+      // if (result.isSingleResult()){
+      //   // TODO
+      // }
+
+      // TODO: if we only have a VarDecl , return DeclRefExpr
+
+      llvm::errs() << "IVL manual lookup result post filter:\n";
+      Result.dump();
+      assert(false);
 
       // NOTE: filtered lookup looks good
       // TODO: perform overload resolution on them somehow

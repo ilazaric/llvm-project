@@ -917,6 +917,8 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
     IdentifierInfo &II = *Tok.getIdentifierInfo();
     SourceLocation ILoc = ConsumeToken();
 
+    { // NOTE: objc garbage
+      
     // Support 'Class.property' and 'super.property' notation.
     if (getLangOpts().ObjC && Tok.is(tok::period) &&
         (Actions.getTypeName(II, ILoc, getCurScope()) ||
@@ -957,7 +959,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
                                            nullptr);
       break;
     }
-
+    
     // If we have an Objective-C class name followed by an identifier
     // and either ':' or ']', this is an Objective-C class message
     // send that's missing the opening '['. Recovery
@@ -992,7 +994,8 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
             break;
           }
     }
-
+    }
+    
     // Make sure to pass down the right value for isAddressOfOperand.
     if (isAddressOfOperand && isPostfixExpressionSuffixStart())
       isAddressOfOperand = false;
@@ -1009,10 +1012,12 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
     if (Tok.isOneOf(tok::periodstar, tok::arrowstar)) {
       Validator.WantExpressionKeywords = false;
       Validator.WantRemainingKeywords = false;
-    } else {
+    }
+    else {
       Validator.WantRemainingKeywords = Tok.isNot(tok::r_paren);
     }
     Name.setIdentifier(&II, ILoc);
+    // TODO: looks important
     Res = Actions.ActOnIdExpression(
         getCurScope(), ScopeSpec, TemplateKWLoc, Name, Tok.is(tok::l_paren),
         isAddressOfOperand, &Validator,
@@ -1574,6 +1579,13 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
     return ExprError();
   }
 
+  // TODO: previous switch seems to produce a reference to the lambda
+  llvm::errs() << "IVL ParseCastExpression() SavedKind = " << SavedKind << "\n";
+  llvm::errs() << "IVL ParseCastExpression() tok::identifier = " << tok::identifier << "\n";
+  llvm::errs() << "IVL ParseCastExpression() getTokenName(SavedKind) = " << getTokenName(SavedKind) << "\n";
+  llvm::errs() << "IVL ParseCastExpression() dumping Res after big switch\n";
+  if (Res.isInvalid()) llvm::errs() << "broken\n"; else Res.get()->dump();
+
   // Check to see whether Res is a function designator only. If it is and we
   // are compiling for OpenCL, we need to return an error as this implies
   // that the address of the function is being taken, which is illegal in CL.
@@ -1638,7 +1650,11 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
 }
 
 ExprResult
-Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
+Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
+  llvm::errs() << "IVL ParsePostfixExpressionSuffix() called from " << loc.file_name() << " | " << loc.function_name() << ":" << loc.line() << "\n";
+  llvm::errs() << "IVL Dumping LHS\n";
+  if (LHS.isInvalid()) llvm::errs() << "broken\n"; else LHS.get()->dump();
+  // assert(false && "stacktrace pls");
   // Now that the primary-expression piece of the postfix-expression has been
   // parsed, see if there are any postfix-expression pieces here.
   SourceLocation Loc;
@@ -1797,6 +1813,8 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
     case tok::l_paren:         // p-e: p-e '(' argument-expression-list[opt] ')'
     case tok::lesslessless: {  // p-e: p-e '<<<' argument-expression-list '>>>'
                                //   '(' argument-expression-list[opt] ')'
+    if (LHS.isInvalid()) llvm::errs() << "broken\n"; else LHS.get()->dump();
+    llvm::errs() << "\n";
       tok::TokenKind OpKind = Tok.getKind();
       InMessageExpressionRAIIObject InMessage(*this, false);
 
@@ -2040,7 +2058,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
                                             OpKind, SS, TemplateKWLoc, Name,
                                  CurParsedObjCImpl ? CurParsedObjCImpl->Dcl
                                                    : nullptr);
-        if (LHS.isInvalid() || !isa<UnresolvedLookupExpr>(LHS.get())) IVL_BLA = nullptr;
+        if (LHS.isInvalid() || isa<UnresolvedMemberExpr>(LHS.get())) IVL_BLA = nullptr;
       }
       if (!LHS.isInvalid()) {
         if (Tok.is(tok::less))
