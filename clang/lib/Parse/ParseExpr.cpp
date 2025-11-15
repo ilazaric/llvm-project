@@ -1650,7 +1650,6 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
   auto SavedType = PreferredType;
   Expr* IVL_BLA = nullptr;
   while (true) {
-    // LHS.get()->dump();
     // Each iteration relies on preferred type for the whole expression.
     PreferredType = SavedType;
     switch (Tok.getKind()) {
@@ -1802,8 +1801,6 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
     case tok::l_paren:         // p-e: p-e '(' argument-expression-list[opt] ')'
     case tok::lesslessless: {  // p-e: p-e '<<<' argument-expression-list '>>>'
                                //   '(' argument-expression-list[opt] ')'
-    if (LHS.isInvalid()) llvm::errs() << "broken\n"; else LHS.get()->dump();
-    llvm::errs() << "\n";
       tok::TokenKind OpKind = Tok.getKind();
       InMessageExpressionRAIIObject InMessage(*this, false);
 
@@ -1906,7 +1903,6 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
         LHS = ExprError();
       }
       else {
-        // LHS.get()->dump();
         Expr *Fn = LHS.get();
         SourceLocation RParLoc = Tok.getLocation();
         // TODO: think more on next line
@@ -2048,7 +2044,10 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
                                  CurParsedObjCImpl ? CurParsedObjCImpl->Dcl
                                                    : nullptr);
         // TODO: check if this if is good
-        if (LHS.isInvalid() || isa<UnresolvedMemberExpr>(LHS.get())) IVL_BLA = nullptr;
+        // NOTE: would be better to just report back from ActOnMemberAccessExpr
+        // ....: if it went through [[ivl::ufcs]] mechanism 
+        if (LHS.isInvalid() || isa<UnresolvedMemberExpr, CXXDependentScopeMemberExpr, MemberExpr>(LHS.get()))
+          IVL_BLA = nullptr;
       }
       if (!LHS.isInvalid()) {
         if (Tok.is(tok::less))

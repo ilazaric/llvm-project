@@ -60,7 +60,7 @@ SemaBase::SemaDiagnosticBuilder::getDeviceDeferredDiags() const {
 
 Sema::SemaDiagnosticBuilder SemaBase::Diag(SourceLocation Loc,
                                            unsigned DiagID, std::source_location loc) {
-  llvm::errs() << "IVL Diagnostic invoked from " << loc.file_name() << ":" << loc.line() << " `" << loc.function_name() << "`\n";
+  // llvm::errs() << "IVL Diagnostic invoked from " << loc.file_name() << ":" << loc.line() << " `" << loc.function_name() << "`\n";
   bool IsError =
       getDiagnostics().getDiagnosticIDs()->isDefaultMappingAsError(DiagID);
   bool ShouldDefer = getLangOpts().CUDA && getLangOpts().GPUDeferDiag &&
