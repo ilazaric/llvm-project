@@ -1094,7 +1094,6 @@ ExprResult Sema::DefaultVariadicArgumentPromotion(Expr *E, VariadicCallType CT,
     if (TrapFn.isInvalid())
       return ExprError();
 
-    // llvm::errs() << "IVL HERE: " << __func__ << ":" << __LINE__ << "\n";
     ExprResult Call = BuildCallExpr(TUScope, TrapFn.get(), E->getBeginLoc(), {},
                                     E->getEndLoc());
     if (Call.isInvalid())
@@ -2713,9 +2712,6 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
                                    bool IsInlineAsmIdentifier,
                                    Token *KeywordReplacement,
                                    std::function<bool(Decl*)> LookupFilterFn) {
-  llvm::errs() << "IVL enter ActOnIdExpression\n";
-  struct Endit { ~Endit() {   llvm::errs() << "IVL exit ActOnIdExpression\n"; }};
-  Endit endit;
   assert(!(IsAddressOfOperand && HasTrailingLParen) &&
          "cannot be direct & operand and have a trailing lparen");
   if (SS.isInvalid())
@@ -2763,7 +2759,6 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
 
   auto filter_results = [&] {
     if (!LookupFilterFn) return;
-    llvm::errs() << "IVL filtering ...\n";
     auto filter = R.makeFilter();
     while (filter.hasNext()){
       auto decl = filter.next();
@@ -2773,10 +2768,6 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
   };
 
   filter_results();
-
-  llvm::errs() << "IVL dump\n";
-  R.dump();
-  llvm::errs() << "IVL end dump\n";
   
   if (TemplateKWLoc.isValid() || TemplateArgs) {
     // Lookup the template name again to correctly establish the context in
@@ -2795,21 +2786,17 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
                                         IsAddressOfOperand, TemplateArgs);
   }
   else {
-    llvm::errs() << "IVL non-template branch\n";
-    llvm::errs() << "IVL " << __LINE__ << " R.empty()? " << R.empty() << "\n";
     bool IvarLookupFollowUp = II && !SS.isSet() && getCurMethodDecl();
     // TODO: this breaks my LookupResult filtering
     LookupParsedName(R, S, &SS, /*ObjectType=*/QualType(),
                      /*AllowBuiltinCreation=*/!IvarLookupFollowUp);
     filter_results();
-    llvm::errs() << "IVL " << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
     // If the result might be in a dependent base class, this is a dependent
     // id-expression.
     if (R.wasNotFoundInCurrentInstantiation() || SS.isInvalid())
       return ActOnDependentIdExpression(SS, TemplateKWLoc, NameInfo,
                                         IsAddressOfOperand, TemplateArgs);
-    llvm::errs() << "IVL " << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
     // If this reference is in an Objective-C method, then we need to do
     // some special Objective-C lookup, too.
@@ -2822,7 +2809,6 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
         return Ex;
     }
   }
-  llvm::errs() << "IVL " << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
   if (R.isAmbiguous())
     return ExprError();
@@ -2831,7 +2817,6 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
   // mode allows it as a feature.
   if (R.empty() && HasTrailingLParen && II &&
       getLangOpts().implicitFunctionsAllowed()) {
-    llvm::errs() << "IVL implicitFunctionsAllowed section\n";
     NamedDecl *D = ImplicitlyDefineFunction(NameLoc, *II, S);
     if (D)
       R.addDecl(D);
@@ -2840,11 +2825,6 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
   // Determine whether this name might be a candidate for
   // argument-dependent lookup.
   bool ADL = UseArgumentDependentLookup(SS, R, HasTrailingLParen);
-  llvm::errs() << "IVL ADL? " << ADL << "\n";
-  llvm::errs() << "IVL R.empty()? " << R.empty() << "\n";
-  llvm::errs() << "IVL dump\n";
-  R.dump();
-  llvm::errs() << "IVL end dump\n";
 
   if (R.empty() && !ADL) {
     if (SS.isEmpty() && getLangOpts().MSVCCompat) {
@@ -6721,10 +6701,6 @@ ExprResult Sema::BuildCallExpr(Scope *Scope, Expr *Fn, SourceLocation LParenLoc,
       // TODO: gather free [[ivl::ufcs]] functions, do overload resolution on both?
       // NOTE: might be simpler to require one of the overload sets is empty for now
       // NOTE: apparently we get a recovery expression ~here if overload set empty
-      if (0) {
-        auto bla = cast<UnresolvedMemberExpr>(Fn);
-        llvm::errs() << "IVL is overload set empty? " << (bla->decls_begin() == bla->decls_end()) << "\n";
-      }
       return BuildCallToMemberFunction(Scope, Fn, LParenLoc, ArgExprs,
                                        RParenLoc, ExecConfig, IsExecConfig,
                                        AllowRecovery);

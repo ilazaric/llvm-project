@@ -1730,10 +1730,6 @@ Parser::TryAnnotateName(CorrectionCandidateCallback *CCC,
 
   // NOTE: Classification has the overload set already
 
-  // llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
-  // Classification.getExpression().get()->dump();
-  // llvm::errs() << "IVL HERE " << __func__ << ":" << __LINE__ << "\n";
-
   // If name lookup found nothing and we guessed that this was a template name,
   // double-check before committing to that interpretation. C++20 requires that
   // we interpret this as a template-id if it can be, but if it can't be, then

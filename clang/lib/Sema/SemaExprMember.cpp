@@ -963,10 +963,6 @@ ExprResult Sema::BuildMemberReferenceExpr(
     return RetryExpr;
   }
 
-  // llvm::errs() << "IVL " << __func__ << " dumping LookupResult post magic ivl
-  // if\n"; R.dump(); llvm::errs() << "IVL " << __func__ << " DONE dumping
-  // LookupResult post magic ivl if\n";
-
   // TODO: qualified ufcs lookup lands here, which is bad
   // NOTE: that means R is not empty, should generalize previous if?
   //
