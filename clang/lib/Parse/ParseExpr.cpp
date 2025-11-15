@@ -2058,6 +2058,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
                                             OpKind, SS, TemplateKWLoc, Name,
                                  CurParsedObjCImpl ? CurParsedObjCImpl->Dcl
                                                    : nullptr);
+        // TODO: check if this if is good
         if (LHS.isInvalid() || isa<UnresolvedMemberExpr>(LHS.get())) IVL_BLA = nullptr;
       }
       if (!LHS.isInvalid()) {

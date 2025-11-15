@@ -1,9 +1,11 @@
 struct S {};
 
-// int mem(const S&) { return 12; }
+namespace NS {
+int mem(const S&) { return 12; }
+}
 
 int main(){
-  [[ivl::ufcs]] auto mem = [](const S&) { return 12; };
+  // [[ivl::ufcs]] auto mem = [](const S&) { return 12; };
   // return mem(S{});
-  return S{}.mem();
+  return S{}.NS::mem();
 }

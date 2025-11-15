@@ -645,9 +645,9 @@ bool Sema::CheckQualifiedMemberReference(Expr *BaseExpr,
       return false;
   }
 
-  DiagnoseQualifiedMemberReference(*this, BaseExpr, BaseType, SS,
-                                   R.getRepresentativeDecl(),
-                                   R.getLookupNameInfo());
+  // DiagnoseQualifiedMemberReference(*this, BaseExpr, BaseType, SS,
+  //                                  R.getRepresentativeDecl(),
+  //                                  R.getLookupNameInfo());
   return true;
 }
 
@@ -918,107 +918,22 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
     Diag(MemberLoc, diag::warn_cdtor_function_try_handler_mem_expr)
         << isa<CXXDestructorDecl>(FD);
 
+  auto try_to_do_ivl_ufcs_lookup = [&]{
+    UnqualifiedId Name;
+    Name.setIdentifier(MemberName.getAsIdentifierInfo(),
+                       MemberLoc);
+    // TODO: this doesn't filter down to [[ivl::ufcs]] stuff
+    return ActOnIdExpression(const_cast<Scope*>(S), const_cast<CXXScopeSpec&>(SS), SourceLocation(), Name, true, false, nullptr, false, nullptr);
+  };
+
   if (R.empty()) {
     // TODO: here we tried to access a member, and nothing was found
     // TODO: we want to introduce [[ivl::ufcs]] free function lookup instead
     // NOTE: if the free function overload set turns up empty,
     // NOTE: go through same recovery as before
 
-    { // Try to find a [[ivl::ufcs]] free function.
-      // llvm::errs() << "IVL Dumping MemberName\n";
-      // MemberName.dump();
-      // llvm::errs() << "IVL Dumping LookupResult\n";
-      // R.dump();
-      // llvm::errs() << "IVL Dumping ExtraArgs\n";
-      // if (ExtraArgs) ExtraArgs->dump(); else llvm::errs() << "nullptr\n";
-      // TODO: this returns empty set always for some reason
-      // NOTE: this was wrong
-      // auto E = ActOnNameClassifiedAsUndeclaredNonType(MemberName.getAsIdentifierInfo(), MemberLoc);
-
-      {
-        UnqualifiedId Name;
-        Name.setIdentifier(MemberName.getAsIdentifierInfo(),
-                           MemberLoc);
-
-        // TODO: this doesn't filter down to [[ivl::ufcs]] stuff
-        auto Foo = ActOnIdExpression(const_cast<Scope*>(S), const_cast<CXXScopeSpec&>(SS), SourceLocation(), Name, true, false, nullptr, false, nullptr);
-      if (Foo.isInvalid())
-        goto ivl_ufcs_end;
-      return Foo;
-      }
-
-      // llvm::errs() << "IVL manual lookup result\n";
-      LookupResult Result(*this, MemberName.getAsIdentifierInfo(), MemberLoc, LookupOrdinaryName);
-      LookupParsedName(Result, const_cast<Scope*>(S), const_cast<CXXScopeSpec*>(&SS), /*ObjectType=*/QualType());
-
-      // llvm::errs() << "IVL manual lookup result:\n";
-      // Result.dump();
-      // if (E.isInvalid()) llvm::errs() << "broken\n"; else E.get()->dump();
-
-      // TODO: this erroneously filters out:
-      // [[ivl::ufcs]] void fn3(const S&, auto);
-      // AST:
-      // FunctionTemplateDecl 0x6357a811dee8 <<invalid sloc>, ivl_test_1.cpp:14:38> col:20 fn3
-      // |-TemplateTypeParmDecl 0x6357a811dbc8 <col:34, col:38> col:38 implicit class depth 0 index 0 auto:1
-      // `-FunctionDecl 0x6357a811de38 <col:15, col:38> col:20 fn3 'void (const S &, auto)'
-      //   |-ParmVarDecl 0x6357a811db28 <col:24, col:31> col:32 'const S &'
-      //   |-ParmVarDecl 0x6357a811dcc0 <col:34> col:38 'auto'
-      //   `-IVLUFCSAttr 0x6357a811df50 <col:3, col:8>
-      auto filter = Result.makeFilter();
-      while (filter.hasNext()){
-        auto decl = filter.next();
-        if (isa<FunctionTemplateDecl>(decl)){
-          decl = cast<FunctionTemplateDecl>(decl)->getTemplatedDecl();
-        }
-        
-        if (decl->hasAttr<IVLUFCSAttr>()) continue;
-
-        filter.erase();
-      }
-      filter.done();
-
-      // if (result.isOverloadedResult()){
-      //   return UnresolvedLookupExpr::Create(
-      // Context, Result.getNamingClass(), SS.getWithLocInContext(Context),
-      // Result.getLookupNameInfo(), /*ADL*/false, Result.begin(), Result.end(),
-      // /*KnownDependent=*/false, /*KnownInstantiationDependent=*/false);
-      // }
-
-      // if (result.isSingleResult()){
-      //   // TODO
-      // }
-
-      // TODO: if we only have a VarDecl , return DeclRefExpr
-
-      llvm::errs() << "IVL manual lookup result post filter:\n";
-      Result.dump();
-      assert(false);
-
-      // NOTE: filtered lookup looks good
-      // TODO: perform overload resolution on them somehow
-      // TODO: first step form a UnresolvedLookupExpr
-
-      // llvm::errs() << "IVL Result kind: " << (int)Result.getResultKind() << "\n";
-      // if (!Result.isOverloadedResult()){
-      //   llvm::errs() << "IVL Result is not an overload set, skipping\n";
-      //   goto ivl_ufcs_end;
-      // }
-
-      // NOTE: here it is indeed an overload set, time to perform overload resolution somehow
-      auto IVL_ULE = UnresolvedLookupExpr::Create(
-      Context, Result.getNamingClass(), SS.getWithLocInContext(Context),
-      Result.getLookupNameInfo(), /*ADL*/false, Result.begin(), Result.end(),
-      /*KnownDependent=*/false, /*KnownInstantiationDependent=*/false);
-
-      // llvm::errs() << "IVL Dumping IVL_ULE\n";
-      // IVL_ULE->dump();
-      
-      // auto E = ActOnCallExpr(Scope, IVL_ULE, SourceLocation(), ARGS, SourceLocation(), nullptr);
-      return IVL_ULE; // this will be fun
-      // assert(false && "stacktrace pls");
-    }
-
-  ivl_ufcs_end:;
+    if (auto Ret = try_to_do_ivl_ufcs_lookup(); !Ret.isInvalid())
+      return Ret;
     
     ExprResult RetryExpr = ExprError();
     if (ExtraArgs && !IsArrow && BaseExpr && !BaseExpr->isTypeDependent()) {
@@ -1057,6 +972,13 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
     return RetryExpr;
   }
 
+  // llvm::errs() << "IVL " << __func__ << " dumping LookupResult post magic ivl if\n";
+  // R.dump();
+  // llvm::errs() << "IVL " << __func__ << " DONE dumping LookupResult post magic ivl if\n";
+
+  // TODO: qualified ufcs lookup lands here, which is bad
+  // NOTE: that means R is not empty, should generalize previous if?
+  //
   // Diagnose lookups that find only declarations from a non-base
   // type.  This is possible for either qualified lookups (which may
   // have been qualified with an unrelated type) or implicit member
@@ -1068,8 +990,14 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
        (isa<CXXThisExpr>(BaseExpr) &&
         cast<CXXThisExpr>(BaseExpr)->isImplicit())) &&
       !SuppressQualifierCheck &&
-      CheckQualifiedMemberReference(BaseExpr, BaseType, SS, R))
+      CheckQualifiedMemberReference(BaseExpr, BaseType, SS, R)){
+    if (auto Ret = try_to_do_ivl_ufcs_lookup(); !Ret.isInvalid())
+      return Ret;
+    DiagnoseQualifiedMemberReference(*this, BaseExpr, BaseType, SS,
+                                     R.getRepresentativeDecl(),
+                                     R.getLookupNameInfo());
     return ExprError();
+  }
 
   // Construct an unresolved result if we in fact got an unresolved
   // result.
