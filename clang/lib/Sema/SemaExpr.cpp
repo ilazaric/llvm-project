@@ -2711,7 +2711,11 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
                                    bool IsAddressOfOperand,
                                    CorrectionCandidateCallback *CCC,
                                    bool IsInlineAsmIdentifier,
-                                   Token *KeywordReplacement) {
+                                   Token *KeywordReplacement,
+                                   std::function<bool(Decl*)> LookupFilterFn) {
+  llvm::errs() << "IVL enter ActOnIdExpression\n";
+  struct Endit { ~Endit() {   llvm::errs() << "IVL exit ActOnIdExpression\n"; }};
+  Endit endit;
   assert(!(IsAddressOfOperand && HasTrailingLParen) &&
          "cannot be direct & operand and have a trailing lparen");
   if (SS.isInvalid())
@@ -2756,6 +2760,24 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
                  (Id.getKind() == UnqualifiedIdKind::IK_ImplicitSelfParam)
                      ? LookupObjCImplicitSelfParam
                      : LookupOrdinaryName);
+
+  auto filter_results = [&] {
+    if (!LookupFilterFn) return;
+    llvm::errs() << "IVL filtering ...\n";
+    auto filter = R.makeFilter();
+    while (filter.hasNext()){
+      auto decl = filter.next();
+      if (LookupFilterFn(decl)) filter.erase();
+    }
+    filter.done();
+  };
+
+  filter_results();
+
+  llvm::errs() << "IVL dump\n";
+  R.dump();
+  llvm::errs() << "IVL end dump\n";
+  
   if (TemplateKWLoc.isValid() || TemplateArgs) {
     // Lookup the template name again to correctly establish the context in
     // which it was found. This is really unfortunate as we already did the
@@ -2771,16 +2793,23 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
     if (R.wasNotFoundInCurrentInstantiation() || SS.isInvalid())
       return ActOnDependentIdExpression(SS, TemplateKWLoc, NameInfo,
                                         IsAddressOfOperand, TemplateArgs);
-  } else {
+  }
+  else {
+    llvm::errs() << "IVL non-template branch\n";
+    llvm::errs() << "IVL " << __LINE__ << " R.empty()? " << R.empty() << "\n";
     bool IvarLookupFollowUp = II && !SS.isSet() && getCurMethodDecl();
+    // TODO: this breaks my LookupResult filtering
     LookupParsedName(R, S, &SS, /*ObjectType=*/QualType(),
                      /*AllowBuiltinCreation=*/!IvarLookupFollowUp);
+    filter_results();
+    llvm::errs() << "IVL " << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
     // If the result might be in a dependent base class, this is a dependent
     // id-expression.
     if (R.wasNotFoundInCurrentInstantiation() || SS.isInvalid())
       return ActOnDependentIdExpression(SS, TemplateKWLoc, NameInfo,
                                         IsAddressOfOperand, TemplateArgs);
+    llvm::errs() << "IVL " << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
     // If this reference is in an Objective-C method, then we need to do
     // some special Objective-C lookup, too.
@@ -2793,6 +2822,7 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
         return Ex;
     }
   }
+  llvm::errs() << "IVL " << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
   if (R.isAmbiguous())
     return ExprError();
@@ -2801,6 +2831,7 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
   // mode allows it as a feature.
   if (R.empty() && HasTrailingLParen && II &&
       getLangOpts().implicitFunctionsAllowed()) {
+    llvm::errs() << "IVL implicitFunctionsAllowed section\n";
     NamedDecl *D = ImplicitlyDefineFunction(NameLoc, *II, S);
     if (D)
       R.addDecl(D);
@@ -2809,6 +2840,11 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
   // Determine whether this name might be a candidate for
   // argument-dependent lookup.
   bool ADL = UseArgumentDependentLookup(SS, R, HasTrailingLParen);
+  llvm::errs() << "IVL ADL? " << ADL << "\n";
+  llvm::errs() << "IVL R.empty()? " << R.empty() << "\n";
+  llvm::errs() << "IVL dump\n";
+  R.dump();
+  llvm::errs() << "IVL end dump\n";
 
   if (R.empty() && !ADL) {
     if (SS.isEmpty() && getLangOpts().MSVCCompat) {

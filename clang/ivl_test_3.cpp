@@ -1,7 +1,8 @@
 struct S {};
 
 namespace NS {
-int mem(const S&) { return 12; }
+  // [[ivl::ufcs]]
+  int mem(const S&) { return 12; }
 }
 
 int main(){

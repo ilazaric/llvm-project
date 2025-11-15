@@ -7145,7 +7145,8 @@ public:
                                bool HasTrailingLParen, bool IsAddressOfOperand,
                                CorrectionCandidateCallback *CCC = nullptr,
                                bool IsInlineAsmIdentifier = false,
-                               Token *KeywordReplacement = nullptr);
+                               Token *KeywordReplacement = nullptr,
+                               std::function<bool(Decl*)> LookupFilterFn = {});
 
   /// Decomposes the given name into a DeclarationNameInfo, its location, and
   /// possibly a list of template arguments.

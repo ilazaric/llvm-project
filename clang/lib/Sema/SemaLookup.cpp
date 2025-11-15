@@ -2432,6 +2432,8 @@ bool Sema::LookupQualifiedName(LookupResult &R, DeclContext *LookupCtx,
                                bool InUnqualifiedLookup) {
   assert(LookupCtx && "Sema::LookupQualifiedName requires a lookup context");
 
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
+
   if (!R.getLookupName())
     return false;
 
@@ -2476,12 +2478,16 @@ bool Sema::LookupQualifiedName(LookupResult &R, DeclContext *LookupCtx,
     }
   }
 
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
+  // TODO: LookupDirect seems to populate garbage
   if (LookupDirect(*this, R, LookupCtx)) {
+    llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
     R.resolveKind();
     if (LookupRec)
       R.setNamingClass(LookupRec);
     return true;
   }
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
   // Don't descend into implied contexts for redeclarations.
   // C++98 [namespace.qual]p6:
@@ -2494,6 +2500,7 @@ bool Sema::LookupQualifiedName(LookupResult &R, DeclContext *LookupCtx,
   // See also [class.mfct]p5 and [class.static.data]p2.
   if (R.isForRedeclaration())
     return false;
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
   // If this is a namespace, look it up in the implied namespaces.
   if (LookupCtx->isFileContext())
@@ -2522,6 +2529,8 @@ bool Sema::LookupQualifiedName(LookupResult &R, DeclContext *LookupCtx,
     return false;
   }
 
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
+
   // Perform lookup into our base classes.
 
   DeclarationName Name = R.getLookupName();
@@ -2547,6 +2556,8 @@ bool Sema::LookupQualifiedName(LookupResult &R, DeclContext *LookupCtx,
     return false;
 
   R.setNamingClass(LookupRec);
+
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
   // C++ [class.member.lookup]p2:
   //   [...] If the resulting set of declarations are not all from
@@ -2687,6 +2698,8 @@ bool Sema::LookupQualifiedName(LookupResult &R, DeclContext *LookupCtx,
     }
   }
 
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
+
   // Lookup in a base class succeeded; return these results.
 
   for (DeclContext::lookup_iterator I = Paths.front().Decls, E = I.end();
@@ -2694,7 +2707,7 @@ bool Sema::LookupQualifiedName(LookupResult &R, DeclContext *LookupCtx,
     AccessSpecifier AS = CXXRecordDecl::MergeAccess(SubobjectAccess,
                                                     (*I)->getAccess());
     if (NamedDecl *ND = R.getAcceptableDecl(*I))
-      R.addDecl(ND, AS);
+      R.addDecl(ND, AS); // TODO: this might be important
   }
   R.resolveKind();
   return true;
@@ -2714,6 +2727,8 @@ bool Sema::LookupParsedName(LookupResult &R, Scope *S, CXXScopeSpec *SS,
   // When the scope specifier is invalid, don't even look for anything.
   if (SS && SS->isInvalid())
     return false;
+
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
   // Determine where to perform name lookup
   DeclContext *DC = nullptr;
@@ -2749,6 +2764,7 @@ bool Sema::LookupParsedName(LookupResult &R, Scope *S, CXXScopeSpec *SS,
     // Perform unqualified name lookup starting in the given scope.
     return LookupName(R, S, AllowBuiltinCreation);
   }
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
 
   // If we were able to compute a declaration context, perform qualified name
   // lookup in that context.
@@ -2759,6 +2775,7 @@ bool Sema::LookupParsedName(LookupResult &R, Scope *S, CXXScopeSpec *SS,
     // context, which means that SS refers to an unknown specialization.
     // Name lookup can't find anything in this case.
     R.setNotFoundInCurrentInstantiation();
+  llvm::errs() << "IVL " << __func__ << ":" << __LINE__ << " R.empty()? " << R.empty() << "\n";
   return false;
 }
 
