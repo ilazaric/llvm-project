@@ -1510,11 +1510,13 @@ CXXDependentScopeMemberExpr::CXXDependentScopeMemberExpr(
     SourceLocation OperatorLoc, NestedNameSpecifierLoc QualifierLoc,
     SourceLocation TemplateKWLoc, NamedDecl *FirstQualifierFoundInScope,
     DeclarationNameInfo MemberNameInfo,
-    const TemplateArgumentListInfo *TemplateArgs)
+    const TemplateArgumentListInfo *TemplateArgs,
+    Expr* IVLUFCSAlternative)
     : Expr(CXXDependentScopeMemberExprClass, Ctx.DependentTy, VK_LValue,
            OK_Ordinary),
       Base(Base), BaseType(BaseType), QualifierLoc(QualifierLoc),
-      MemberNameInfo(MemberNameInfo) {
+      MemberNameInfo(MemberNameInfo),
+      IVLUFCSAlternative(IVLUFCSAlternative) {
   CXXDependentScopeMemberExprBits.IsArrow = IsArrow;
   CXXDependentScopeMemberExprBits.HasTemplateKWAndArgsInfo =
       (TemplateArgs != nullptr) || TemplateKWLoc.isValid();
@@ -1552,7 +1554,8 @@ CXXDependentScopeMemberExpr *CXXDependentScopeMemberExpr::Create(
     SourceLocation OperatorLoc, NestedNameSpecifierLoc QualifierLoc,
     SourceLocation TemplateKWLoc, NamedDecl *FirstQualifierFoundInScope,
     DeclarationNameInfo MemberNameInfo,
-    const TemplateArgumentListInfo *TemplateArgs) {
+    const TemplateArgumentListInfo *TemplateArgs,
+    Expr* IVLUFCSAlternative) {
   bool HasTemplateKWAndArgsInfo =
       (TemplateArgs != nullptr) || TemplateKWLoc.isValid();
   unsigned NumTemplateArgs = TemplateArgs ? TemplateArgs->size() : 0;
@@ -1565,7 +1568,7 @@ CXXDependentScopeMemberExpr *CXXDependentScopeMemberExpr::Create(
   void *Mem = Ctx.Allocate(Size, alignof(CXXDependentScopeMemberExpr));
   return new (Mem) CXXDependentScopeMemberExpr(
       Ctx, Base, BaseType, IsArrow, OperatorLoc, QualifierLoc, TemplateKWLoc,
-      FirstQualifierFoundInScope, MemberNameInfo, TemplateArgs);
+      FirstQualifierFoundInScope, MemberNameInfo, TemplateArgs, IVLUFCSAlternative);
 }
 
 CXXDependentScopeMemberExpr *CXXDependentScopeMemberExpr::CreateEmpty(

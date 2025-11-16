@@ -3878,6 +3878,8 @@ class CXXDependentScopeMemberExpr final
   /// e.g., the \c x in x.f.  Can be null in implicit accesses.
   Stmt *Base;
 
+  Expr* IVLUFCSAlternative;
+
   /// The type of the base expression.  Never null, even for
   /// implicit accesses.
   QualType BaseType;
@@ -3931,7 +3933,8 @@ class CXXDependentScopeMemberExpr final
                               SourceLocation TemplateKWLoc,
                               NamedDecl *FirstQualifierFoundInScope,
                               DeclarationNameInfo MemberNameInfo,
-                              const TemplateArgumentListInfo *TemplateArgs);
+                              const TemplateArgumentListInfo *TemplateArgs,
+                              Expr* IVLUFCSAlternative);
 
   CXXDependentScopeMemberExpr(EmptyShell Empty, bool HasTemplateKWAndArgsInfo,
                               bool HasFirstQualifierFoundInScope);
@@ -3942,7 +3945,12 @@ public:
          SourceLocation OperatorLoc, NestedNameSpecifierLoc QualifierLoc,
          SourceLocation TemplateKWLoc, NamedDecl *FirstQualifierFoundInScope,
          DeclarationNameInfo MemberNameInfo,
-         const TemplateArgumentListInfo *TemplateArgs);
+         const TemplateArgumentListInfo *TemplateArgs,
+         Expr* IVLUFCSAlternative);
+
+  Expr* getIVLUFCSAlternative() { return IVLUFCSAlternative; }
+  const Expr* getIVLUFCSAlternative() const { return IVLUFCSAlternative; }
+  void setIVLUFCSAlternative(Expr* X) { IVLUFCSAlternative = X; }
 
   static CXXDependentScopeMemberExpr *
   CreateEmpty(const ASTContext &Ctx, bool HasTemplateKWAndArgsInfo,
@@ -4096,12 +4104,17 @@ public:
   child_range children() {
     if (isImplicitAccess())
       return child_range(child_iterator(), child_iterator());
+    // TODO
+    if (IVLUFCSAlternative)
+      return child_range(&Base, &Base + 2);
     return child_range(&Base, &Base + 1);
   }
 
   const_child_range children() const {
     if (isImplicitAccess())
       return const_child_range(const_child_iterator(), const_child_iterator());
+    if (IVLUFCSAlternative)
+      return const_child_range(&Base, &Base + 2);
     return const_child_range(&Base, &Base + 1);
   }
 };

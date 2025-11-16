@@ -2049,6 +2049,8 @@ void ASTStmtReader::VisitCXXDependentScopeMemberExpr(
   else
     E->Base = nullptr;
 
+  // TODO
+
   E->CXXDependentScopeMemberExprBits.OperatorLoc = readSourceLocation();
 
   if (HasFirstQualifierFoundInScope)

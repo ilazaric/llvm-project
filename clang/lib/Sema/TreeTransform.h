@@ -2900,6 +2900,9 @@ public:
                                    MultiExprArg Args,
                                    SourceLocation RParenLoc,
                                    Expr *ExecConfig = nullptr) {
+    llvm::ivls() << "Dumping Callee\n";
+    Callee->dump();
+    llvm::ivls() << "Done Dumping Callee\n";
     return getSema().ActOnCallExpr(
         /*Scope=*/nullptr, Callee, LParenLoc, Args, RParenLoc, ExecConfig);
   }
@@ -3653,7 +3656,8 @@ public:
   ///
   /// By default, performs semantic analysis to build the new expression.
   /// Subclasses may override this routine to provide different behavior.
-  ExprResult RebuildCXXDependentScopeMemberExpr(Expr *BaseE,
+  ExprResult RebuildCXXDependentScopeMemberExpr(Expr* IVL,
+                                                Expr *BaseE,
                                                 QualType BaseType,
                                                 bool IsArrow,
                                                 SourceLocation OperatorLoc,
@@ -3670,7 +3674,9 @@ public:
                                             SS, TemplateKWLoc,
                                             FirstQualifierInScope,
                                             MemberNameInfo,
-                                            TemplateArgs, /*S*/nullptr);
+                                            TemplateArgs, /*S*/nullptr,
+                                            /*ExtraArgs*/nullptr,
+                                            IVL);
   }
 
   /// Build a new member reference expression.
@@ -13492,22 +13498,48 @@ TreeTransform<Derived>::TransformOMPIteratorExpr(OMPIteratorExpr *E) {
 template<typename Derived>
 ExprResult
 TreeTransform<Derived>::TransformCallExpr(CallExpr *E) {
+  llvm::ivls() << "Dumping E\n";
+  E->dump();
+  llvm::ivls() << "Done Dumping E\n";
+
+  llvm::ivls() << "Dumping E->getCallee()\n";
+  E->getCallee()->dump();
+  llvm::ivls() << "Done Dumping E->getCallee()\n";
+
   // Transform the callee.
   ExprResult Callee = getDerived().TransformExpr(E->getCallee());
   if (Callee.isInvalid())
     return ExprError();
 
+  llvm::ivls() << "Dumping transformed Callee\n";
+  Callee.get()->dump();
+  // assert(false && "bug before this");
+
+  llvm::ivls() << "post callee transform\n";
+
   // Transform arguments.
   bool ArgChanged = false;
+  // TODO: if member -> ivl::ufcs free happened, need to add the (transformed) expression to Args
   SmallVector<Expr*, 8> Args;
   if (getDerived().TransformExprs(E->getArgs(), E->getNumArgs(), true, Args,
                                   &ArgChanged))
     return ExprError();
 
+  // TODO: this is a proxy for "ivl::ufcs happened"
+  if (isa<CXXDependentScopeMemberExpr>(E->getCallee()) && !isa<UnresolvedMemberExpr, CXXDependentScopeMemberExpr, MemberExpr>(Callee.get())){
+    auto X = getDerived().TransformExpr(cast<CXXDependentScopeMemberExpr>(E->getCallee())->getBase());
+    if (X.isInvalid()) return ExprError();
+    Args.insert(Args.begin(), X.get());
+  }
+
+  llvm::ivls() << "post arg transform\n";
+
   if (!getDerived().AlwaysRebuild() &&
       Callee.get() == E->getCallee() &&
       !ArgChanged)
     return SemaRef.MaybeBindToTemporary(E);
+
+  llvm::ivls() << "post something?\n";
 
   // FIXME: Wrong source location information for the '('.
   SourceLocation FakeLParenLoc
@@ -13520,6 +13552,8 @@ TreeTransform<Derived>::TransformCallExpr(CallExpr *E) {
         NewOverrides.applyOverrides(getSema().getLangOpts());
     getSema().FpPragmaStack.CurrentValue = NewOverrides;
   }
+
+  llvm::ivls() << "right before return\n";
 
   return getDerived().RebuildCallExpr(Callee.get(), FakeLParenLoc,
                                       Args,
@@ -15975,6 +16009,8 @@ template<typename Derived>
 ExprResult
 TreeTransform<Derived>::TransformCXXDependentScopeMemberExpr(
                                              CXXDependentScopeMemberExpr *E) {
+  llvm::ivls() << "here\n";
+  
   // Transform the base of the expression.
   ExprResult Base((Expr*) nullptr);
   Expr *OldBase;
@@ -16033,6 +16069,8 @@ TreeTransform<Derived>::TransformCXXDependentScopeMemberExpr(
   if (!NameInfo.getName())
     return ExprError();
 
+  llvm::ivls() << "before interesting if\n";
+
   if (!E->hasExplicitTemplateArgs()) {
     // This is a reference to a member without an explicitly-specified
     // template argument list. Optimize for this common case.
@@ -16044,7 +16082,8 @@ TreeTransform<Derived>::TransformCXXDependentScopeMemberExpr(
         FirstQualifierInScope == E->getFirstQualifierFoundInScope())
       return E;
 
-    return getDerived().RebuildCXXDependentScopeMemberExpr(Base.get(),
+    return getDerived().RebuildCXXDependentScopeMemberExpr(E->getIVLUFCSAlternative(),
+                                                           Base.get(),
                                                        BaseType,
                                                        E->isArrow(),
                                                        E->getOperatorLoc(),
@@ -16055,13 +16094,17 @@ TreeTransform<Derived>::TransformCXXDependentScopeMemberExpr(
                                                        /*TemplateArgs*/nullptr);
   }
 
+  llvm::ivls() << "after interesting if\n";
+
+
   TemplateArgumentListInfo TransArgs(E->getLAngleLoc(), E->getRAngleLoc());
   if (getDerived().TransformTemplateArguments(E->getTemplateArgs(),
                                               E->getNumTemplateArgs(),
                                               TransArgs))
     return ExprError();
 
-  return getDerived().RebuildCXXDependentScopeMemberExpr(Base.get(),
+  return getDerived().RebuildCXXDependentScopeMemberExpr(E->getIVLUFCSAlternative(),
+                                                         Base.get(),
                                                      BaseType,
                                                      E->isArrow(),
                                                      E->getOperatorLoc(),

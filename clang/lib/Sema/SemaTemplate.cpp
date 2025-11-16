@@ -748,12 +748,41 @@ Sema::ActOnDependentIdExpression(const CXXScopeSpec &SS,
     if (ThisType.isNull())
       return ExprError();
 
+    
+    auto try_to_do_ivl_ufcs_lookup = [&] {
+      auto S = getCurScope();
+      
+      const DeclarationNameInfo &MemberNameInfo = NameInfo;
+      DeclarationName MemberName = MemberNameInfo.getName();
+      SourceLocation MemberLoc = MemberNameInfo.getLoc();
+
+      UnqualifiedId Name;
+      Name.setIdentifier(MemberName.getAsIdentifierInfo(), MemberLoc);
+      // llvm::ivls() << "Name: " << MemberName.getAsIdentifierInfo()->getName()
+      // << "\n"; llvm::ivls() << "SS.isEmpty(): " << SS.isEmpty() << "\n";
+      // TODO: this doesn't filter down to [[ivl::ufcs]] stuff
+      // TODO: add some diagnostics
+      return ActOnIdExpression(
+                               const_cast<Scope *>(S), const_cast<CXXScopeSpec &>(SS),
+                               SourceLocation(), Name, true, false, nullptr, false, nullptr,
+                               [](Decl *decl) {
+                                 // llvm::ivls() << "dumping candidate:\n";
+                                 // decl->dump();
+                                 if (isa<FunctionTemplateDecl>(decl))
+                                   decl = cast<FunctionTemplateDecl>(decl)->getTemplatedDecl();
+                                 return !decl->hasAttr<IVLUFCSAttr>();
+                               });
+    };
+
+    auto IVL = try_to_do_ivl_ufcs_lookup();
+    
     return CXXDependentScopeMemberExpr::Create(
         Context, /*Base=*/nullptr, ThisType,
         /*IsArrow=*/!Context.getLangOpts().HLSL,
         /*OperatorLoc=*/SourceLocation(),
         /*QualifierLoc=*/NestedNameSpecifierLoc(), TemplateKWLoc,
-        /*FirstQualifierFoundInScope=*/nullptr, NameInfo, TemplateArgs);
+        /*FirstQualifierFoundInScope=*/nullptr, NameInfo, TemplateArgs,
+        IVL.isInvalid() ? nullptr : IVL.get());
   }
   return BuildDependentDeclRefExpr(SS, TemplateKWLoc, NameInfo, TemplateArgs);
 }

@@ -939,10 +939,11 @@ Sema::LookupInlineAsmVarDeclField(Expr *E, StringRef Member,
     DeclarationNameInfo NameInfo;
     NameInfo.setLoc(AsmLoc);
     NameInfo.setName(&Context.Idents.get(Member));
+    assert(false && "inspect what does this even do, regarding the ivl arg down");
     return CXXDependentScopeMemberExpr::Create(
         Context, E, T, /*IsArrow=*/false, AsmLoc, NestedNameSpecifierLoc(),
         SourceLocation(),
-        /*FirstQualifierFoundInScope=*/nullptr, NameInfo, /*TemplateArgs=*/nullptr);
+        /*FirstQualifierFoundInScope=*/nullptr, NameInfo, /*TemplateArgs=*/nullptr, /*ivlufcsalternative*/nullptr);
   }
 
   auto *RD = T->getAsRecordDecl();

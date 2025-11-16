@@ -584,13 +584,40 @@ ExprResult Sema::ActOnDependentMemberExpr(
                                        [](const TemplateArgumentLoc &Arg) {
                                          return Arg.getArgument().isDependent();
                                        })));
+  
+  auto try_to_do_ivl_ufcs_lookup = [&] -> Expr* {
+  const DeclarationNameInfo &MemberNameInfo = NameInfo;
+  DeclarationName MemberName = MemberNameInfo.getName();
+  SourceLocation MemberLoc = MemberNameInfo.getLoc();
+
+  auto S = getCurScope();
+    UnqualifiedId Name;
+    Name.setIdentifier(MemberName.getAsIdentifierInfo(), MemberLoc);
+    llvm::ivls() << "Name: " << MemberName.getAsIdentifierInfo()->getName()
+                 << "\n";
+    llvm::ivls() << "SS.isEmpty(): " << SS.isEmpty() << "\n";
+    // TODO: this doesn't filter down to [[ivl::ufcs]] stuff
+    // TODO: add some diagnostics
+    auto bla = ActOnIdExpression(
+        const_cast<Scope *>(S), const_cast<CXXScopeSpec &>(SS),
+        SourceLocation(), Name, true, false, nullptr, false, nullptr,
+        [](Decl *decl) {
+          llvm::ivls() << "dumping candidate:\n";
+          decl->dump();
+          if (isa<FunctionTemplateDecl>(decl))
+            decl = cast<FunctionTemplateDecl>(decl)->getTemplatedDecl();
+          return !decl->hasAttr<IVLUFCSAttr>();
+        });
+    if (bla.isInvalid()) return nullptr;
+    return bla.get();
+  };
 
   // Get the type being accessed in BaseType.  If this is an arrow, the BaseExpr
   // must have pointer type, and the accessed type is the pointee.
   return CXXDependentScopeMemberExpr::Create(
       Context, BaseExpr, BaseType, IsArrow, OpLoc,
       SS.getWithLocInContext(Context), TemplateKWLoc, FirstQualifierInScope,
-      NameInfo, TemplateArgs);
+      NameInfo, TemplateArgs, try_to_do_ivl_ufcs_lookup());
 }
 
 /// We know that the given qualified member reference points only to
@@ -678,7 +705,9 @@ ExprResult Sema::BuildMemberReferenceExpr(
     CXXScopeSpec &SS, SourceLocation TemplateKWLoc,
     NamedDecl *FirstQualifierInScope, const DeclarationNameInfo &NameInfo,
     const TemplateArgumentListInfo *TemplateArgs, const Scope *S,
-    ActOnMemberAccessExtraArgs *ExtraArgs) {
+    ActOnMemberAccessExtraArgs *ExtraArgs, Expr* IVL) {
+  llvm::ivls() << "entered this one\n";
+
   LookupResult R(*this, NameInfo, LookupMemberName);
 
   // Implicit member accesses.
@@ -717,9 +746,10 @@ ExprResult Sema::BuildMemberReferenceExpr(
   if (SS.isInvalid())
     return ExprError();
 
+  llvm::ivls() << "reached other one\n";
   return BuildMemberReferenceExpr(Base, BaseType, OpLoc, IsArrow, SS,
                                   TemplateKWLoc, FirstQualifierInScope, R,
-                                  TemplateArgs, S, false, ExtraArgs);
+                                  TemplateArgs, S, false, ExtraArgs, IVL);
 }
 
 ExprResult Sema::BuildAnonymousStructUnionMemberReference(
@@ -858,7 +888,12 @@ ExprResult Sema::BuildMemberReferenceExpr(
     const CXXScopeSpec &SS, SourceLocation TemplateKWLoc,
     NamedDecl *FirstQualifierInScope, LookupResult &R,
     const TemplateArgumentListInfo *TemplateArgs, const Scope *S,
-    bool SuppressQualifierCheck, ActOnMemberAccessExtraArgs *ExtraArgs) {
+    bool SuppressQualifierCheck, ActOnMemberAccessExtraArgs *ExtraArgs, Expr* IVL) {
+  llvm::ivls() << "entered other one\n";
+  llvm::ivls() << "dumping R\n";
+  R.dump();
+  llvm::ivls() << "done dumping R\n";
+
   assert(!SS.isInvalid() && "nested-name-specifier cannot be invalid");
   // If the member wasn't found in the current instantiation, or if the
   // arrow operator was used with a dependent non-pointer object expression,
@@ -900,15 +935,24 @@ ExprResult Sema::BuildMemberReferenceExpr(
     Diag(MemberLoc, diag::warn_cdtor_function_try_handler_mem_expr)
         << isa<CXXDestructorDecl>(FD);
 
-  auto try_to_do_ivl_ufcs_lookup = [&] {
+  auto try_to_do_ivl_ufcs_lookup = [&] -> ExprResult {
+    if (S == nullptr){
+      if (IVL) return IVL;
+      return ExprError();
+    }
     UnqualifiedId Name;
     Name.setIdentifier(MemberName.getAsIdentifierInfo(), MemberLoc);
+    llvm::ivls() << "Name: " << MemberName.getAsIdentifierInfo()->getName()
+                 << "\n";
+    llvm::ivls() << "SS.isEmpty(): " << SS.isEmpty() << "\n";
     // TODO: this doesn't filter down to [[ivl::ufcs]] stuff
     // TODO: add some diagnostics
     return ActOnIdExpression(
         const_cast<Scope *>(S), const_cast<CXXScopeSpec &>(SS),
         SourceLocation(), Name, true, false, nullptr, false, nullptr,
         [](Decl *decl) {
+          llvm::ivls() << "dumping candidate:\n";
+          decl->dump();
           if (isa<FunctionTemplateDecl>(decl))
             decl = cast<FunctionTemplateDecl>(decl)->getTemplatedDecl();
           return !decl->hasAttr<IVLUFCSAttr>();
@@ -921,8 +965,19 @@ ExprResult Sema::BuildMemberReferenceExpr(
     // NOTE: if the free function overload set turns up empty,
     // NOTE: go through same recovery as before
 
-    if (auto Ret = try_to_do_ivl_ufcs_lookup(); !Ret.isInvalid())
+    llvm::ivls() << "R empty, performing ivl::ufcs lookup\n";
+    llvm::ivls() << "Dumping scope\n";
+    if (S)
+      S->dump();
+    else
+      llvm::errs() << "broken\n";
+    llvm::ivls() << "Done Dumping scope\n";
+
+    if (auto Ret = try_to_do_ivl_ufcs_lookup(); !Ret.isInvalid()) {
+      llvm::ivls() << "ivl::ufcs lookup found:\n";
+      Ret.get()->dump();
       return Ret;
+    }
 
     ExprResult RetryExpr = ExprError();
     if (ExtraArgs && !IsArrow && BaseExpr && !BaseExpr->isTypeDependent()) {
@@ -1150,7 +1205,7 @@ ExprResult Sema::BuildMemberReferenceExpr(
     // Non-dependent member, but dependent template arguments.
     if (!VDecl.get())
       return ActOnDependentMemberExpr(
-          BaseExpr, BaseExpr->getType(), IsArrow, OpLoc, SS, TemplateKWLoc,
+                                      BaseExpr, BaseExpr->getType(), IsArrow, OpLoc, SS, TemplateKWLoc,
           FirstQualifierInScope, MemberNameInfo, TemplateArgs);
 
     VarDecl *Var = cast<VarDecl>(VDecl.get());

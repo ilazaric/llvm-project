@@ -2503,6 +2503,7 @@ bool Sema::DiagnoseEmptyLookup(Scope *S, CXXScopeSpec &SS, LookupResult &R,
                                CorrectionCandidateCallback &CCC,
                                TemplateArgumentListInfo *ExplicitTemplateArgs,
                                ArrayRef<Expr *> Args, DeclContext *LookupCtx) {
+  assert(false && "i want stacktrace");
   DeclarationName Name = R.getLookupName();
   SourceRange NameRange = R.getLookupNameInfo().getSourceRange();
 
@@ -2691,7 +2692,7 @@ recoverFromMSUnqualifiedLookup(Sema &S, ASTContext &Context,
     return CXXDependentScopeMemberExpr::Create(
         Context, /*This=*/nullptr, ThisType, /*IsArrow=*/true,
         /*Op=*/SourceLocation(), NestedNameSpecifierLoc(), TemplateKWLoc,
-        /*FirstQualifierFoundInScope=*/nullptr, NameInfo, TemplateArgs);
+        /*FirstQualifierFoundInScope=*/nullptr, NameInfo, TemplateArgs, /*ivlufcsalternative*/nullptr);
   }
 
   // Synthesize a fake NNS that points to the derived class.  This will
@@ -2756,6 +2757,8 @@ ExprResult Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
                  (Id.getKind() == UnqualifiedIdKind::IK_ImplicitSelfParam)
                      ? LookupObjCImplicitSelfParam
                      : LookupOrdinaryName);
+
+  llvm::ivls() << "R.empty(): " << R.empty() << "\n";
 
   auto filter_results = [&] {
     if (!LookupFilterFn) return;

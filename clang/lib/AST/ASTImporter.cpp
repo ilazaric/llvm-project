@@ -8758,10 +8758,14 @@ ExpectedStmt ASTNodeImporter::VisitCXXDependentScopeMemberExpr(
           ImportDeclarationNameLoc(E->getMemberNameInfo(), ToMemberNameInfo))
     return std::move(Err);
 
+  auto ToIVL = importChecked(Err, E->getIVLUFCSAlternative());
+  if (Err) return std::move(Err);
+
+  // TODO: figure out what else needs to be modified
   return CXXDependentScopeMemberExpr::Create(
       Importer.getToContext(), ToBase, ToType, E->isArrow(), ToOperatorLoc,
       ToQualifierLoc, ToTemplateKeywordLoc, ToFirstQualifierFoundInScope,
-      ToMemberNameInfo, ResInfo);
+      ToMemberNameInfo, ResInfo, ToIVL);
 }
 
 ExpectedStmt

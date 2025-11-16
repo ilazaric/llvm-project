@@ -2049,6 +2049,7 @@ void ASTStmtWriter::VisitCXXDependentScopeMemberExpr(
   CurrentPackingBits.addBit(!E->isImplicitAccess());
   if (!E->isImplicitAccess())
     Record.AddStmt(E->getBase());
+  // TODO
 
   Record.AddSourceLocation(E->getOperatorLoc());
 

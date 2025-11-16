@@ -8933,7 +8933,8 @@ public:
       CXXScopeSpec &SS, SourceLocation TemplateKWLoc,
       NamedDecl *FirstQualifierInScope, const DeclarationNameInfo &NameInfo,
       const TemplateArgumentListInfo *TemplateArgs, const Scope *S,
-      ActOnMemberAccessExtraArgs *ExtraArgs = nullptr);
+      ActOnMemberAccessExtraArgs *ExtraArgs = nullptr,
+      Expr* CachedIVL = nullptr);
 
   ExprResult
   BuildMemberReferenceExpr(Expr *Base, QualType BaseType, SourceLocation OpLoc,
@@ -8942,7 +8943,8 @@ public:
                            NamedDecl *FirstQualifierInScope, LookupResult &R,
                            const TemplateArgumentListInfo *TemplateArgs,
                            const Scope *S, bool SuppressQualifierCheck = false,
-                           ActOnMemberAccessExtraArgs *ExtraArgs = nullptr);
+                           ActOnMemberAccessExtraArgs *ExtraArgs = nullptr,
+                           Expr* CachedIVL = nullptr);
 
   ExprResult BuildFieldReferenceExpr(Expr *BaseExpr, bool IsArrow,
                                      SourceLocation OpLoc,
