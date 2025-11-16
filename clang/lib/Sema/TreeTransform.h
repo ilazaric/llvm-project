@@ -2900,9 +2900,9 @@ public:
                                    MultiExprArg Args,
                                    SourceLocation RParenLoc,
                                    Expr *ExecConfig = nullptr) {
-    llvm::ivls() << "Dumping Callee\n";
-    Callee->dump();
-    llvm::ivls() << "Done Dumping Callee\n";
+    // llvm::ivls() << "Dumping Callee\n";
+    // Callee->dump();
+    // llvm::ivls() << "Done Dumping Callee\n";
     return getSema().ActOnCallExpr(
         /*Scope=*/nullptr, Callee, LParenLoc, Args, RParenLoc, ExecConfig);
   }
@@ -13498,24 +13498,24 @@ TreeTransform<Derived>::TransformOMPIteratorExpr(OMPIteratorExpr *E) {
 template<typename Derived>
 ExprResult
 TreeTransform<Derived>::TransformCallExpr(CallExpr *E) {
-  llvm::ivls() << "Dumping E\n";
-  E->dump();
-  llvm::ivls() << "Done Dumping E\n";
+  // llvm::ivls() << "Dumping E\n";
+  // E->dump();
+  // llvm::ivls() << "Done Dumping E\n";
 
-  llvm::ivls() << "Dumping E->getCallee()\n";
-  E->getCallee()->dump();
-  llvm::ivls() << "Done Dumping E->getCallee()\n";
+  // llvm::ivls() << "Dumping E->getCallee()\n";
+  // E->getCallee()->dump();
+  // llvm::ivls() << "Done Dumping E->getCallee()\n";
 
   // Transform the callee.
   ExprResult Callee = getDerived().TransformExpr(E->getCallee());
   if (Callee.isInvalid())
     return ExprError();
 
-  llvm::ivls() << "Dumping transformed Callee\n";
-  Callee.get()->dump();
-  // assert(false && "bug before this");
+  // llvm::ivls() << "Dumping transformed Callee\n";
+  // Callee.get()->dump();
+  // // assert(false && "bug before this");
 
-  llvm::ivls() << "post callee transform\n";
+  // llvm::ivls() << "post callee transform\n";
 
   // Transform arguments.
   bool ArgChanged = false;

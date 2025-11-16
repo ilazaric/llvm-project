@@ -593,17 +593,17 @@ ExprResult Sema::ActOnDependentMemberExpr(
   auto S = getCurScope();
     UnqualifiedId Name;
     Name.setIdentifier(MemberName.getAsIdentifierInfo(), MemberLoc);
-    llvm::ivls() << "Name: " << MemberName.getAsIdentifierInfo()->getName()
-                 << "\n";
-    llvm::ivls() << "SS.isEmpty(): " << SS.isEmpty() << "\n";
+    // llvm::ivls() << "Name: " << MemberName.getAsIdentifierInfo()->getName()
+    //              << "\n";
+    // llvm::ivls() << "SS.isEmpty(): " << SS.isEmpty() << "\n";
     // TODO: this doesn't filter down to [[ivl::ufcs]] stuff
     // TODO: add some diagnostics
     auto bla = ActOnIdExpression(
         const_cast<Scope *>(S), const_cast<CXXScopeSpec &>(SS),
         SourceLocation(), Name, true, false, nullptr, false, nullptr,
         [](Decl *decl) {
-          llvm::ivls() << "dumping candidate:\n";
-          decl->dump();
+          // llvm::ivls() << "dumping candidate:\n";
+          // decl->dump();
           if (isa<FunctionTemplateDecl>(decl))
             decl = cast<FunctionTemplateDecl>(decl)->getTemplatedDecl();
           return !decl->hasAttr<IVLUFCSAttr>();
@@ -706,7 +706,7 @@ ExprResult Sema::BuildMemberReferenceExpr(
     NamedDecl *FirstQualifierInScope, const DeclarationNameInfo &NameInfo,
     const TemplateArgumentListInfo *TemplateArgs, const Scope *S,
     ActOnMemberAccessExtraArgs *ExtraArgs, Expr* IVL) {
-  llvm::ivls() << "entered this one\n";
+  // llvm::ivls() << "entered this one\n";
 
   LookupResult R(*this, NameInfo, LookupMemberName);
 
@@ -746,7 +746,7 @@ ExprResult Sema::BuildMemberReferenceExpr(
   if (SS.isInvalid())
     return ExprError();
 
-  llvm::ivls() << "reached other one\n";
+  // llvm::ivls() << "reached other one\n";
   return BuildMemberReferenceExpr(Base, BaseType, OpLoc, IsArrow, SS,
                                   TemplateKWLoc, FirstQualifierInScope, R,
                                   TemplateArgs, S, false, ExtraArgs, IVL);
@@ -889,10 +889,10 @@ ExprResult Sema::BuildMemberReferenceExpr(
     NamedDecl *FirstQualifierInScope, LookupResult &R,
     const TemplateArgumentListInfo *TemplateArgs, const Scope *S,
     bool SuppressQualifierCheck, ActOnMemberAccessExtraArgs *ExtraArgs, Expr* IVL) {
-  llvm::ivls() << "entered other one\n";
-  llvm::ivls() << "dumping R\n";
-  R.dump();
-  llvm::ivls() << "done dumping R\n";
+  // llvm::ivls() << "entered other one\n";
+  // llvm::ivls() << "dumping R\n";
+  // R.dump();
+  // llvm::ivls() << "done dumping R\n";
 
   assert(!SS.isInvalid() && "nested-name-specifier cannot be invalid");
   // If the member wasn't found in the current instantiation, or if the
@@ -942,17 +942,17 @@ ExprResult Sema::BuildMemberReferenceExpr(
     }
     UnqualifiedId Name;
     Name.setIdentifier(MemberName.getAsIdentifierInfo(), MemberLoc);
-    llvm::ivls() << "Name: " << MemberName.getAsIdentifierInfo()->getName()
-                 << "\n";
-    llvm::ivls() << "SS.isEmpty(): " << SS.isEmpty() << "\n";
+    // llvm::ivls() << "Name: " << MemberName.getAsIdentifierInfo()->getName()
+    //              << "\n";
+    // llvm::ivls() << "SS.isEmpty(): " << SS.isEmpty() << "\n";
     // TODO: this doesn't filter down to [[ivl::ufcs]] stuff
     // TODO: add some diagnostics
     return ActOnIdExpression(
         const_cast<Scope *>(S), const_cast<CXXScopeSpec &>(SS),
         SourceLocation(), Name, true, false, nullptr, false, nullptr,
         [](Decl *decl) {
-          llvm::ivls() << "dumping candidate:\n";
-          decl->dump();
+          // llvm::ivls() << "dumping candidate:\n";
+          // decl->dump();
           if (isa<FunctionTemplateDecl>(decl))
             decl = cast<FunctionTemplateDecl>(decl)->getTemplatedDecl();
           return !decl->hasAttr<IVLUFCSAttr>();
@@ -965,17 +965,17 @@ ExprResult Sema::BuildMemberReferenceExpr(
     // NOTE: if the free function overload set turns up empty,
     // NOTE: go through same recovery as before
 
-    llvm::ivls() << "R empty, performing ivl::ufcs lookup\n";
-    llvm::ivls() << "Dumping scope\n";
-    if (S)
-      S->dump();
-    else
-      llvm::errs() << "broken\n";
-    llvm::ivls() << "Done Dumping scope\n";
+    // llvm::ivls() << "R empty, performing ivl::ufcs lookup\n";
+    // llvm::ivls() << "Dumping scope\n";
+    // if (S)
+    //   S->dump();
+    // else
+    //   llvm::errs() << "broken\n";
+    // llvm::ivls() << "Done Dumping scope\n";
 
     if (auto Ret = try_to_do_ivl_ufcs_lookup(); !Ret.isInvalid()) {
-      llvm::ivls() << "ivl::ufcs lookup found:\n";
-      Ret.get()->dump();
+      // llvm::ivls() << "ivl::ufcs lookup found:\n";
+      // Ret.get()->dump();
       return Ret;
     }
 

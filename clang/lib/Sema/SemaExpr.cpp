@@ -2503,7 +2503,7 @@ bool Sema::DiagnoseEmptyLookup(Scope *S, CXXScopeSpec &SS, LookupResult &R,
                                CorrectionCandidateCallback &CCC,
                                TemplateArgumentListInfo *ExplicitTemplateArgs,
                                ArrayRef<Expr *> Args, DeclContext *LookupCtx) {
-  assert(false && "i want stacktrace");
+  // assert(false && "i want stacktrace");
   DeclarationName Name = R.getLookupName();
   SourceRange NameRange = R.getLookupNameInfo().getSourceRange();
 

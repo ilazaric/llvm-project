@@ -11,7 +11,7 @@ struct S {
 
 // void fn2(char);
 
-[[ivl::ufcs]] int fn3(const S&, auto);
+[[ivl::ufcs]] void fn3(const S&, auto);
 
 int main(){
   S s;
@@ -24,7 +24,7 @@ int main(){
   s.fn3(4);
 }
 
-#if 0
+#if 1
 #include <iostream>
 
 // void S::fn(int) {
