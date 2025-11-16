@@ -26,6 +26,7 @@
 #include <string_view>
 #include <system_error>
 #include <type_traits>
+#include <source_location>
 
 namespace llvm {
 
@@ -616,6 +617,8 @@ LLVM_ABI raw_fd_ostream &outs();
 /// stderr is written, to ensure the error messages are written in their
 /// expected place.
 LLVM_ABI raw_fd_ostream &errs();
+
+LLVM_ABI raw_ostream &ivls(std::source_location loc = std::source_location::current());
 
 /// This returns a reference to a raw_ostream which simply discards output.
 LLVM_ABI raw_ostream &nulls();

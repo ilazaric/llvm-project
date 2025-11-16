@@ -905,6 +905,10 @@ raw_fd_ostream &llvm::errs() {
   return S;
 }
 
+raw_ostream &llvm::ivls(std::source_location loc) {
+  return llvm::errs() << "IVL " << loc.file_name() << ":" << loc.function_name() << ":" << loc.line() << ": ";
+}
+
 /// nulls() - This returns a reference to a raw_ostream which discards output.
 raw_ostream &llvm::nulls() {
   static raw_null_ostream S;
