@@ -1,122 +1,62 @@
-// Test without serialization:
 // RUN: %clang_cc1 -triple x86_64-unknown-unknown -ast-dump %s \
 // RUN: | FileCheck -strict-whitespace %s
-//
-// Test with serialization:
-// RUN: %clang_cc1 -triple x86_64-unknown-unknown -emit-pch -o %t %s
-// RUN: %clang_cc1 -x c++ -triple x86_64-unknown-unknown -include-pch %t -ast-dump-all /dev/null \
-// RUN: | FileCheck -strict-whitespace %s
 
-// void first();
+// This tests that [[ivl::ufcs]] functions don't come into play when regular member functions would,
+// meaning previously well-formed code has the same meaning.
+namespace TEST1 {
+  struct S {
+    void foo(int);
+  };
 
-//  [[ivl::ufcs]] void fn(int);
-// void fn(char);
-// void fn(long);
-
-// void test_free() {
-//   fn(123);
-//   fn('a');
-//   fn(321l);
-//   // fn(67ll);
-// }
-
-// a non-static member function namespace-qualifiers::class-qualifiers::class::identifier ( args... )
-// is findable as-if a static member function namespace-qualifiers::class-qualifiers::class::identifier ( qualified-class-type , args... )
-
-// a free function namespace-qualifiers::identifier ( args... )
-// is findable in all unqualified member function call overload resolution
-// and all qualified member function call overload resolution if qualifiers::identifier sees it in context
-
-// suppose we declare a free function:
-// [[ivl::ufcs]] namespace-qualifiers::identifier ( args... )
-// consider a unqualified member function call expression.indentifier ( args... )
-// our free function participates in overload resolution if
-// 1) it is visible in current context
-// 2) ADL on identifier ( expresion , args... ) would find it
-//
-// consider a qualified member function call expression.qualifier::identifier ( args... )
-// out free function participates in overload resolution if
-// 1) qualifier::identifier sees it from current context
-//
-// suppose we declare a member function:
-// [[ivl::ufcs]] namespace-qualifiers::class-qualifiers::identifier ( args... )
-
-namespace NS {
-  // struct S { void fn(); void fn(int); };
-  struct S {};
-  // [[ivl::ufcs]] void foobar();
-  // void foobar(int);
-  // [[ivl::ufcs]] void foobar(char);
-  [[ivl::ufcs]] void foobar(const S&);
-  // namespace NS2 { int foobar; }
-  // using namespace NS2;
+  [[ivl::ufcs]] void foo(char);
+  void foo(long);
+  
   void test() {
-    // S s;
-    // S{}.foobar();
-    // auto foobar = []{};
-    // foobar();
-    // foobar();
-    // foobar();
     S s;
-    s.foobar();
+    s.foo(1);
+    s.foo('a');
+    s.foo(2l);
   }
 }
-
-// namespace NS {
-// struct S {
-//   [[ivl::ufcs]] void fn(int) const;
-//   [[ivl::ufcs]] void fn(char) const;
-//   [[ivl::ufcs]] void fn(short) const;
-// };
-
-// [[ivl::ufcs]] void fn(const S&, int);
-// [[ivl::ufcs]] void fn(const S&, char);
-// [[ivl::ufcs]] void fn(const S&, short);
-
-// void fn();
-// void fn(int, int, int);
-
-//   [[ivl::ufcs]] void foobar();
-
-//   namespace NS2 {
-//     struct T {};
-//     void blatruc(T);
-//   }
-
-// void use(){
-//   const S s;
-//   // NS2::T t;
-//   // s.::NS::S::fn(1);
-//   s.foobar();
-//   // foobar();
-//   // blatruc(t);
-//   // ::NS::fn(s, 2);
-// }
-// }
-
-// struct S {
-//   void fn(int);
-//   void fn(char);
-//   void fn(long);
-// };
-
-// void test_member() {
-//   S s;
-//   s.fn(123);
-//   s.fn('a');
-//   s.fn(321l);
-//   // s.fn(67ll);
-// }
-
-// template<typename T>
-// void test_template() {
-//   T t;
-//   t.fn(123);
-//   t.fn('a');
-//   t.fn(321l);
-//   // t.fn(67ll);
-// }
-
-// void test_template_instantiate() {
-//   test_template<S>();
-// }
+// CHECK: `-NamespaceDecl {{.*}} TEST1
+// CHECK-NEXT:   |-CXXRecordDecl {{.*}} referenced struct S definition
+// CHECK-NEXT:   | |-DefinitionData pass_in_registers empty aggregate standard_layout trivially_copyable pod trivial literal has_constexpr_non_copy_move_ctor can_const_default_init
+// CHECK-NEXT:   | | |-DefaultConstructor exists trivial constexpr defaulted_is_constexpr
+// CHECK-NEXT:   | | |-CopyConstructor simple trivial has_const_param implicit_has_const_param
+// CHECK-NEXT:   | | |-MoveConstructor exists simple trivial
+// CHECK-NEXT:   | | |-CopyAssignment simple trivial has_const_param needs_implicit implicit_has_const_param
+// CHECK-NEXT:   | | |-MoveAssignment exists simple trivial needs_implicit
+// CHECK-NEXT:   | | `-Destructor simple irrelevant trivial needs_implicit
+// CHECK-NEXT:   | |-CXXRecordDecl {{.*}} implicit struct S
+// CHECK-NEXT:   | |-CXXMethodDecl {{.*}} used foo 'void (int)'
+// CHECK-NEXT:   | | `-ParmVarDecl {{.*}} 'int'
+// CHECK-NEXT:   | |-CXXConstructorDecl {{.*}} implicit used constexpr S 'void () noexcept' inline default trivial
+// CHECK-NEXT:   | | `-CompoundStmt {{.*}}
+// CHECK-NEXT:   | |-CXXConstructorDecl {{.*}} implicit constexpr S 'void (const S &)' inline default trivial noexcept-unevaluated {{.*}}
+// CHECK-NEXT:   | | `-ParmVarDecl {{.*}} 'const S &'
+// CHECK-NEXT:   | `-CXXConstructorDecl {{.*}} implicit constexpr S 'void (S &&)' inline default trivial noexcept-unevaluated {{.*}}
+// CHECK-NEXT:   |   `-ParmVarDecl {{.*}} 'S &&'
+// CHECK-NEXT:   |-FunctionDecl {{.*}} foo 'void (char)'
+// CHECK-NEXT:   | |-ParmVarDecl {{.*}} 'char'
+// CHECK-NEXT:   | `-IVLUFCSAttr {{.*}}
+// CHECK-NEXT:   |-FunctionDecl {{.*}} foo 'void (long)'
+// CHECK-NEXT:   | `-ParmVarDecl {{.*}} 'long'
+// CHECK-NEXT:   `-FunctionDecl {{.*}} test 'void ()'
+// CHECK-NEXT:     `-CompoundStmt {{.*}}
+// CHECK-NEXT:       |-DeclStmt {{.*}}
+// CHECK-NEXT:       | `-VarDecl {{.*}} used s 'S' callinit
+// CHECK-NEXT:       |   `-CXXConstructExpr {{.*}} 'S' 'void () noexcept'
+// CHECK-NEXT:       |-CXXMemberCallExpr {{.*}} 'void'
+// CHECK-NEXT:       | |-MemberExpr {{.*}} '<bound member function type>' .foo {{.*}}
+// CHECK-NEXT:       | | `-DeclRefExpr {{.*}} 'S' lvalue Var {{.*}} 's' 'S'
+// CHECK-NEXT:       | `-IntegerLiteral {{.*}} 'int' 1
+// CHECK-NEXT:       |-CXXMemberCallExpr {{.*}} 'void'
+// CHECK-NEXT:       | |-MemberExpr {{.*}} '<bound member function type>' .foo {{.*}}
+// CHECK-NEXT:       | | `-DeclRefExpr {{.*}} 'S' lvalue Var {{.*}} 's' 'S'
+// CHECK-NEXT:       | `-ImplicitCastExpr {{.*}} 'int' <IntegralCast>
+// CHECK-NEXT:       |   `-CharacterLiteral {{.*}} 'char' 97
+// CHECK-NEXT:       `-CXXMemberCallExpr {{.*}} 'void'
+// CHECK-NEXT:         |-MemberExpr {{.*}} '<bound member function type>' .foo {{.*}}
+// CHECK-NEXT:         | `-DeclRefExpr {{.*}} 'S' lvalue Var {{.*}} 's' 'S'
+// CHECK-NEXT:         `-ImplicitCastExpr {{.*}} 'int' <IntegralCast>
+// CHECK-NEXT:           `-IntegerLiteral {{.*}} 'long' 2

@@ -15,11 +15,11 @@ std::vector<std::string> split(std::string_view sv) {
   return res;
 }
 
-[[ivl::ufcs]]
-auto wrap_each(auto &&r) {
-  return r | std::views::transform(
-                 [](std::string s) { return "[" + s + "]"; });
-}
+// [[ivl::ufcs]]
+// auto wrap_each(auto &&r) {
+//   return r | std::views::transform(
+//                  [](std::string s) { return "[" + s + "]"; });
+// }
 
 [[ivl::ufcs]]
 std::string join(auto &&r, std::string_view sep) {
@@ -35,9 +35,9 @@ std::string join(auto &&r, std::string_view sep) {
 }
 
 int main() {
-  // auto wrap_each = [](auto&& r){
-  //   return r | std::views::transform([](std::string s) { return "[" + s + "]"; });
-  // };
+  [[ivl::ufcs]] auto wrap_each = [](auto&& r){
+    return r | std::views::transform([](std::string s) { return "[" + s + "]"; });
+  };
   
   std::cout << std::string("hello world  this is a message 123").split().wrap_each().join(", ") << std::endl;
 }
