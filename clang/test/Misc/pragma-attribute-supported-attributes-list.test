@@ -93,7 +93,7 @@
 // CHECK-NEXT: HybridPatchable (SubjectMatchRule_function)
 // CHECK-NEXT: IBAction (SubjectMatchRule_objc_method_is_instance)
 // CHECK-NEXT: IFunc (SubjectMatchRule_function)
-// CHECK-NEXT: IVLUFCS (SubjectMatchRule_function)
+// CHECK-NEXT: IVLUFCS (SubjectMatchRule_function, SubjectMatchRule_variable)
 // CHECK-NEXT: InitPriority (SubjectMatchRule_variable)
 // CHECK-NEXT: InternalLinkage (SubjectMatchRule_variable, SubjectMatchRule_function, SubjectMatchRule_record)
 // CHECK-NEXT: LTOVisibilityPublic (SubjectMatchRule_record)
