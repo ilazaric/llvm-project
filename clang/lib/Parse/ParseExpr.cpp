@@ -1649,6 +1649,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
   SourceLocation Loc;
   auto SavedType = PreferredType;
   Expr* IVL_BLA = nullptr;
+  auto IVL_ACCESS_TOK = tok::period;
   while (true) {
     // Each iteration relies on preferred type for the whole expression.
     PreferredType = SavedType;
@@ -1906,7 +1907,16 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
         Expr *Fn = LHS.get();
         SourceLocation RParLoc = Tok.getLocation();
         // TODO: think more on next line
-        if (IVL_BLA) ArgExprs.insert(ArgExprs.begin(), IVL_BLA);
+        if (IVL_BLA){
+          if (IVL_ACCESS_TOK == tok::period)
+            ArgExprs.insert(ArgExprs.begin(), IVL_BLA);
+          else { // arrow
+            auto Res = Actions.ActOnUnaryOp(getCurScope(), /*TODO*/SourceLocation(), tok::star, IVL_BLA, false);
+            if (Res.isInvalid())
+              return ExprError();
+            ArgExprs.insert(ArgExprs.begin(), Res.get());
+          }
+        }
         LHS = Actions.ActOnCallExpr(getCurScope(), Fn, Loc, ArgExprs, RParLoc,
                                     ExecConfig);
         if (LHS.isInvalid()) {
@@ -2036,6 +2046,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
 
       if (!LHS.isInvalid()) {
         IVL_BLA = LHS.get();
+        IVL_ACCESS_TOK = OpKind;
         // NOTE: this goes from DeclRefExpr to UnresolvedMemberExpr
         // NOTE: we would make it possibly go to UnresolvedLookupExpr
         // TODO: where do i store the expression before tok::period ?

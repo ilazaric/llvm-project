@@ -908,6 +908,7 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
 
   QualType BaseType = BaseExprType;
   if (IsArrow) {
+    // NOTE: seems E-> is already transformed into E->->->... until ptr
     assert(BaseType->isPointerType());
     BaseType = BaseType->castAs<PointerType>()->getPointeeType();
   }
