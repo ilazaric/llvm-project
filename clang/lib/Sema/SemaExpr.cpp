@@ -2932,7 +2932,7 @@ Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
     return BuildTemplateIdExpr(SS, TemplateKWLoc, R, ADL, TemplateArgs);
   }
 
-  return BuildDeclarationNameExpr(SS, R, ADL);
+  return BuildDeclarationNameExpr(SS, R, ADL, false, LookupFilterFn);
 }
 
 ExprResult Sema::BuildQualifiedDeclarationNameExpr(
@@ -3249,7 +3249,8 @@ static bool ShouldLookupResultBeMultiVersionOverload(const LookupResult &R) {
 
 ExprResult Sema::BuildDeclarationNameExpr(const CXXScopeSpec &SS,
                                           LookupResult &R, bool NeedsADL,
-                                          bool AcceptInvalidDecl) {
+                                          bool AcceptInvalidDecl,
+                                          std::function<bool(Decl*)> Filter) {
   // If this is a single, fully-resolved result and we don't need ADL,
   // just build an ordinary singleton decl ref.
   if (!NeedsADL && R.isSingleResult() &&
@@ -3276,6 +3277,7 @@ ExprResult Sema::BuildDeclarationNameExpr(const CXXScopeSpec &SS,
       Context, R.getNamingClass(), SS.getWithLocInContext(Context),
       R.getLookupNameInfo(), NeedsADL, R.begin(), R.end(),
       /*KnownDependent=*/false, /*KnownInstantiationDependent=*/false);
+  ULE->setFilter(Filter);
 
   return ULE;
 }

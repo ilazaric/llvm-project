@@ -7219,7 +7219,8 @@ public:
 
   ExprResult BuildDeclarationNameExpr(const CXXScopeSpec &SS, LookupResult &R,
                                       bool NeedsADL,
-                                      bool AcceptInvalidDecl = false);
+                                      bool AcceptInvalidDecl = false,
+                                      std::function<bool(Decl*)> Filter = {});
 
   /// Complete semantic analysis for a reference to the given declaration.
   ExprResult BuildDeclarationNameExpr(
@@ -9677,7 +9678,8 @@ public:
                         StringLiteral *StringLit = nullptr);
 
   void ArgumentDependentLookup(DeclarationName Name, SourceLocation Loc,
-                               ArrayRef<Expr *> Args, ADLResult &Functions);
+                               ArrayRef<Expr *> Args, ADLResult &Functions,
+                               const std::function<bool(Decl*)>& Filter);
 
   void LookupVisibleDecls(Scope *S, LookupNameKind Kind,
                           VisibleDeclConsumer &Consumer,
@@ -10591,7 +10593,8 @@ public:
   void AddArgumentDependentLookupCandidates(
       DeclarationName Name, SourceLocation Loc, ArrayRef<Expr *> Args,
       TemplateArgumentListInfo *ExplicitTemplateArgs,
-      OverloadCandidateSet &CandidateSet, bool PartialOverloading = false);
+      OverloadCandidateSet &CandidateSet, bool PartialOverloading = false,
+      const std::function<bool(Decl*)>& Filter = {});
 
   /// Check the enable_if expressions on the given function. Returns the first
   /// failing attribute, or NULL if they were all successful.

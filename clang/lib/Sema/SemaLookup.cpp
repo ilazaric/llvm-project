@@ -3869,7 +3869,8 @@ void ADLResult::insert(NamedDecl *New) {
 }
 
 void Sema::ArgumentDependentLookup(DeclarationName Name, SourceLocation Loc,
-                                   ArrayRef<Expr *> Args, ADLResult &Result) {
+                                   ArrayRef<Expr *> Args, ADLResult &Result,
+                                   const std::function<bool(Decl*)>& Filter) {
   // Find all of the associated namespaces and classes based on the
   // arguments we have.
   AssociatedNamespaceSet AssociatedNamespaces;
@@ -3909,6 +3910,7 @@ void Sema::ArgumentDependentLookup(DeclarationName Name, SourceLocation Loc,
     //        a declaration of an associated entity attached to M.
     DeclContext::lookup_result R = NS->lookup(Name);
     for (auto *D : R) {
+      if (Filter && Filter(D)) continue;
       auto *Underlying = D;
       if (auto *USD = dyn_cast<UsingShadowDecl>(D))
         Underlying = USD->getTargetDecl();

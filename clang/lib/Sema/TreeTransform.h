@@ -2900,9 +2900,6 @@ public:
                                    MultiExprArg Args,
                                    SourceLocation RParenLoc,
                                    Expr *ExecConfig = nullptr) {
-    // llvm::ivls() << "Dumping Callee\n";
-    // Callee->dump();
-    // llvm::ivls() << "Done Dumping Callee\n";
     return getSema().ActOnCallExpr(
         /*Scope=*/nullptr, Callee, LParenLoc, Args, RParenLoc, ExecConfig);
   }
@@ -13498,24 +13495,10 @@ TreeTransform<Derived>::TransformOMPIteratorExpr(OMPIteratorExpr *E) {
 template<typename Derived>
 ExprResult
 TreeTransform<Derived>::TransformCallExpr(CallExpr *E) {
-  // llvm::ivls() << "Dumping E\n";
-  // E->dump();
-  // llvm::ivls() << "Done Dumping E\n";
-
-  // llvm::ivls() << "Dumping E->getCallee()\n";
-  // E->getCallee()->dump();
-  // llvm::ivls() << "Done Dumping E->getCallee()\n";
-
   // Transform the callee.
   ExprResult Callee = getDerived().TransformExpr(E->getCallee());
   if (Callee.isInvalid())
     return ExprError();
-
-  // llvm::ivls() << "Dumping transformed Callee\n";
-  // Callee.get()->dump();
-  // // assert(false && "bug before this");
-
-  // llvm::ivls() << "post callee transform\n";
 
   // Transform arguments.
   bool ArgChanged = false;
@@ -13532,14 +13515,10 @@ TreeTransform<Derived>::TransformCallExpr(CallExpr *E) {
     Args.insert(Args.begin(), X.get());
   }
 
-  llvm::ivls() << "post arg transform\n";
-
   if (!getDerived().AlwaysRebuild() &&
       Callee.get() == E->getCallee() &&
       !ArgChanged)
     return SemaRef.MaybeBindToTemporary(E);
-
-  llvm::ivls() << "post something?\n";
 
   // FIXME: Wrong source location information for the '('.
   SourceLocation FakeLParenLoc
@@ -13552,8 +13531,6 @@ TreeTransform<Derived>::TransformCallExpr(CallExpr *E) {
         NewOverrides.applyOverrides(getSema().getLangOpts());
     getSema().FpPragmaStack.CurrentValue = NewOverrides;
   }
-
-  llvm::ivls() << "right before return\n";
 
   return getDerived().RebuildCallExpr(Callee.get(), FakeLParenLoc,
                                       Args,
@@ -16009,8 +15986,6 @@ template<typename Derived>
 ExprResult
 TreeTransform<Derived>::TransformCXXDependentScopeMemberExpr(
                                              CXXDependentScopeMemberExpr *E) {
-  llvm::ivls() << "here\n";
-  
   // Transform the base of the expression.
   ExprResult Base((Expr*) nullptr);
   Expr *OldBase;
@@ -16069,8 +16044,6 @@ TreeTransform<Derived>::TransformCXXDependentScopeMemberExpr(
   if (!NameInfo.getName())
     return ExprError();
 
-  llvm::ivls() << "before interesting if\n";
-
   if (!E->hasExplicitTemplateArgs()) {
     // This is a reference to a member without an explicitly-specified
     // template argument list. Optimize for this common case.
@@ -16093,9 +16066,6 @@ TreeTransform<Derived>::TransformCXXDependentScopeMemberExpr(
                                                        NameInfo,
                                                        /*TemplateArgs*/nullptr);
   }
-
-  llvm::ivls() << "after interesting if\n";
-
 
   TemplateArgumentListInfo TransArgs(E->getLAngleLoc(), E->getRAngleLoc());
   if (getDerived().TransformTemplateArguments(E->getTemplateArgs(),

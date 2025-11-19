@@ -10410,8 +10410,11 @@ Sema::AddArgumentDependentLookupCandidates(DeclarationName Name,
                                            ArrayRef<Expr *> Args,
                                  TemplateArgumentListInfo *ExplicitTemplateArgs,
                                            OverloadCandidateSet& CandidateSet,
-                                           bool PartialOverloading) {
+                                           bool PartialOverloading,
+                                           const std::function<bool(Decl*)>& Filter) {
   ADLResult Fns;
+
+  // TODO: filter out non-ivl::ufcs entities
 
   // FIXME: This approach for uniquing ADL results (and removing
   // redundant candidates from the set) relies on pointer-equality,
@@ -10421,7 +10424,7 @@ Sema::AddArgumentDependentLookupCandidates(DeclarationName Name,
   // we supposed to consider on ADL candidates, anyway?
 
   // FIXME: Pass in the explicit template arguments?
-  ArgumentDependentLookup(Name, Loc, Args, Fns);
+  ArgumentDependentLookup(Name, Loc, Args, Fns, Filter);
 
   ArrayRef<Expr *> ReversedArgs;
 
@@ -14247,9 +14250,6 @@ void Sema::AddOverloadedCallCandidates(UnresolvedLookupExpr *ULE,
 
   // NOTE: here we seem to populate the overload set
 
-  // llvm::errs() << "Dumping ULE:\n";
-  // ULE->dump();
-
   // It would be nice to avoid this copy.
   TemplateArgumentListInfo TABuffer;
   TemplateArgumentListInfo *ExplicitTemplateArgs = nullptr;
@@ -14272,12 +14272,15 @@ void Sema::AddOverloadedCallCandidates(UnresolvedLookupExpr *ULE,
   if (ULE->requiresADL())
     AddArgumentDependentLookupCandidates(ULE->getName(), ULE->getExprLoc(),
                                          Args, ExplicitTemplateArgs,
-                                         CandidateSet, PartialOverloading);
+                                         CandidateSet, PartialOverloading, ULE->getFilter());
 }
 
 void Sema::AddOverloadedCallCandidates(
     LookupResult &R, TemplateArgumentListInfo *ExplicitTemplateArgs,
     ArrayRef<Expr *> Args, OverloadCandidateSet &CandidateSet) {
+
+  llvm::ivls() << "Second one\n";
+  
   for (LookupResult::iterator I = R.begin(), E = R.end(); I != E; ++I)
     AddOverloadedCallCandidate(*this, I.getPair(), ExplicitTemplateArgs, Args,
                                CandidateSet, false, /*KnownValid*/ false);
@@ -14568,8 +14571,6 @@ bool Sema::buildOverloadedCallSet(Scope *S, Expr *Fn,
     *Result = ExprError();
     return true;
   }
-
-  // ULE->dump();
 
   // Add the functions denoted by the callee to the set of candidate
   // functions, including those from argument-dependent lookup.
@@ -15013,7 +15014,7 @@ Sema::CreateOverloadedUnaryOp(SourceLocation OpLoc, UnaryOperatorKind Opc,
   if (PerformADL) {
     AddArgumentDependentLookupCandidates(OpName, OpLoc, ArgsArray,
                                          /*ExplicitTemplateArgs*/nullptr,
-                                         CandidateSet);
+                                         CandidateSet, {});
   }
 
   // Add builtin operator candidates.
@@ -15189,13 +15190,13 @@ void Sema::LookupOverloadedBinOp(OverloadCandidateSet &CandidateSet,
     DeclarationName OpName = Context.DeclarationNames.getCXXOperatorName(Op);
     AddArgumentDependentLookupCandidates(OpName, OpLoc, Args,
                                          /*ExplicitTemplateArgs*/ nullptr,
-                                         CandidateSet);
+                                         CandidateSet, {});
     if (ExtraOp) {
       DeclarationName ExtraOpName =
           Context.DeclarationNames.getCXXOperatorName(ExtraOp);
       AddArgumentDependentLookupCandidates(ExtraOpName, OpLoc, Args,
                                            /*ExplicitTemplateArgs*/ nullptr,
-                                           CandidateSet);
+                                           CandidateSet, {});
     }
   }
 

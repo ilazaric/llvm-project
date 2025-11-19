@@ -104,6 +104,8 @@ const char *Stmt::getStmtClassName() const {
                 #CLASS " should be trivially destructible!");
 // FIXME: InitListExpr is not trivially destructible due to its ASTVector.
 #define INITLISTEXPR(CLASS, PARENT)
+// TODO: fix this
+#define UNRESOLVEDLOOKUPEXPR(CLASS, PARENT)
 #include "clang/AST/StmtNodes.inc"
 
 void Stmt::PrintStats() {

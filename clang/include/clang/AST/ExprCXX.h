@@ -3440,6 +3440,12 @@ public:
          UnresolvedSetIterator Begin, UnresolvedSetIterator End,
          bool KnownDependent, bool KnownInstantiationDependent);
 
+  std::function<bool(Decl*)> Filter;
+
+  std::function<bool(Decl*)>& getFilter() { return Filter; }
+  const std::function<bool(Decl*)>& getFilter() const { return Filter; }
+  void setFilter(const std::function<bool(Decl*)> F) { Filter = F; }
+
   // After canonicalization, there may be dependent template arguments in
   // CanonicalConverted But none of Args is dependent. When any of
   // CanonicalConverted dependent, KnownDependent is true.
