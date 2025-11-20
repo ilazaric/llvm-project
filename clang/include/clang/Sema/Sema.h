@@ -8935,7 +8935,8 @@ public:
       NamedDecl *FirstQualifierInScope, const DeclarationNameInfo &NameInfo,
       const TemplateArgumentListInfo *TemplateArgs, const Scope *S,
       ActOnMemberAccessExtraArgs *ExtraArgs = nullptr,
-      Expr* CachedIVL = nullptr);
+      Expr* CachedIVL = nullptr,
+      UnqualifiedId* Id = nullptr);
 
   ExprResult
   BuildMemberReferenceExpr(Expr *Base, QualType BaseType, SourceLocation OpLoc,
@@ -8945,7 +8946,8 @@ public:
                            const TemplateArgumentListInfo *TemplateArgs,
                            const Scope *S, bool SuppressQualifierCheck = false,
                            ActOnMemberAccessExtraArgs *ExtraArgs = nullptr,
-                           Expr* CachedIVL = nullptr);
+                           Expr* CachedIVL = nullptr,
+                           UnqualifiedId* Id = nullptr);
 
   ExprResult BuildFieldReferenceExpr(Expr *BaseExpr, bool IsArrow,
                                      SourceLocation OpLoc,

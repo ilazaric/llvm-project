@@ -13,11 +13,14 @@
 
 
 struct S {
-  template<typename>
-  void tfn();
+  // template<typename> void tfn();
 };
 
-void use(){
+template<typename>
+[[ivl::ufcs]] int tfn(const S&) { return 12; }
+
+int main() {
   S s;
-  s.tfn<int>();
+  return s.template tfn<int>();
+  // template tfn<int>(s);
 }

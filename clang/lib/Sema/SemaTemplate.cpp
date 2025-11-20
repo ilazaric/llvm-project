@@ -564,6 +564,7 @@ bool Sema::LookupTemplateName(LookupResult &Found, Scope *S, CXXScopeSpec &SS,
     // If a 'template' keyword was used, a lookup that finds only non-template
     // names is an error.
     if (ExampleLookupResult && RequiredTemplate) {
+      return false; // TODO
       Diag(Found.getNameLoc(), diag::err_template_kw_refers_to_non_template)
           << Found.getLookupName() << SS.getRange()
           << RequiredTemplate.hasTemplateKeyword()
@@ -5144,14 +5145,17 @@ TemplateNameKind Sema::ActOnTemplateName(Scope *S,
                             /*ATK=*/nullptr, /*AllowTypoCorrection=*/false) &&
         !R.isAmbiguous()) {
       if (LookupCtx)
-        Diag(Name.getBeginLoc(), diag::err_no_member)
-            << DNI.getName() << LookupCtx << SS.getRange();
+        goto ivl_skip_diag;
+        // Diag(Name.getBeginLoc(), diag::err_no_member)
+        //     << DNI.getName() << LookupCtx << SS.getRange();
       else
         Diag(Name.getBeginLoc(), diag::err_undeclared_use)
             << DNI.getName() << SS.getRange();
     }
     return TNK_Non_template;
   }
+
+ ivl_skip_diag:;
 
   NestedNameSpecifier Qualifier = SS.getScopeRep();
 

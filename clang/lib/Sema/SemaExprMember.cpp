@@ -599,7 +599,7 @@ Sema::ActOnDependentMemberExpr(Expr *BaseExpr, QualType BaseType,
     Name.setIdentifier(MemberName.getAsIdentifierInfo(), MemberLoc);
     auto bla = ActOnIdExpression(
                                  const_cast<Scope *>(S), const_cast<CXXScopeSpec &>(SS),
-                                 SourceLocation(), Name, true, false, nullptr, false, nullptr,
+                                 TemplateKWLoc, Name, true, false, nullptr, false, nullptr,
                                  [](Decl *decl) {
                                    if (isa<FunctionTemplateDecl>(decl))
                                      decl = cast<FunctionTemplateDecl>(decl)->getTemplatedDecl();
@@ -703,7 +703,7 @@ ExprResult Sema::BuildMemberReferenceExpr(
     CXXScopeSpec &SS, SourceLocation TemplateKWLoc,
     NamedDecl *FirstQualifierInScope, const DeclarationNameInfo &NameInfo,
     const TemplateArgumentListInfo *TemplateArgs, const Scope *S,
-    ActOnMemberAccessExtraArgs *ExtraArgs, Expr* IVL) {
+    ActOnMemberAccessExtraArgs *ExtraArgs, Expr* IVL, UnqualifiedId* Id) {
   LookupResult R(*this, NameInfo, LookupMemberName);
 
   // Implicit member accesses.
@@ -744,7 +744,7 @@ ExprResult Sema::BuildMemberReferenceExpr(
   return BuildMemberReferenceExpr(Base, BaseType,
                                   OpLoc, IsArrow, SS, TemplateKWLoc,
                                   FirstQualifierInScope, R, TemplateArgs, S,
-                                  false, ExtraArgs, IVL);
+                                  false, ExtraArgs, IVL, Id);
 }
 
 ExprResult
@@ -893,7 +893,8 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
                                const Scope *S,
                                bool SuppressQualifierCheck,
                                ActOnMemberAccessExtraArgs *ExtraArgs,
-                               Expr* IVL) {
+                               Expr* IVL,
+                               UnqualifiedId* Id) {
   assert(!SS.isInvalid() && "nested-name-specifier cannot be invalid");
   // If the member wasn't found in the current instantiation, or if the
   // arrow operator was used with a dependent non-pointer object expression,
@@ -942,16 +943,28 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
        if (IVL) return IVL;
        return ExprError();
      }
-     UnqualifiedId Name;
-     Name.setIdentifier(MemberName.getAsIdentifierInfo(), MemberLoc);
-     return ActOnIdExpression(
+     assert(Id != nullptr);
+     UnqualifiedId& Name = *Id;
+     // Name.setIdentifier(MemberName.getAsIdentifierInfo(), MemberLoc);
+     std::function<bool(Decl*)> Filter =
+       [](Decl *decl) {
+         if (isa<FunctionTemplateDecl>(decl))
+           decl = cast<FunctionTemplateDecl>(decl)->getTemplatedDecl();
+         return !decl->hasAttr<IVLUFCSAttr>();
+       };
+     auto Ret = ActOnIdExpression(
          const_cast<Scope *>(S), const_cast<CXXScopeSpec &>(SS),
-         SourceLocation(), Name, true, false, nullptr, false, nullptr,
-         [](Decl *decl) {
-           if (isa<FunctionTemplateDecl>(decl))
-             decl = cast<FunctionTemplateDecl>(decl)->getTemplatedDecl();
-           return !decl->hasAttr<IVLUFCSAttr>();
-         });
+         TemplateKWLoc, Name, true, false, nullptr, false, nullptr,
+         Filter
+);
+     llvm::ivls() << "Dumping ivl lookup\n";
+     if (Ret.isInvalid()) llvm::ivls() << "broken\n";
+     else Ret.get()->dump();
+     // assert(false);
+     if (isa<UnresolvedLookupExpr>(Ret.get())) {
+       cast<UnresolvedLookupExpr>(Ret.get())->setFilter(Filter);
+     }
+     return Ret;
    };
  
    if (R.empty()) {
@@ -1764,7 +1777,7 @@ ExprResult Sema::ActOnMemberAccessExpr(Scope *S, Expr *Base,
   ActOnMemberAccessExtraArgs ExtraArgs = {S, Id, ObjCImpDecl};
   ExprResult Res = BuildMemberReferenceExpr(
       Base, Base->getType(), OpLoc, IsArrow, SS, TemplateKWLoc,
-      FirstQualifierInScope, NameInfo, TemplateArgs, S, &ExtraArgs);
+      FirstQualifierInScope, NameInfo, TemplateArgs, S, &ExtraArgs, nullptr, &Id);
 
   if (!Res.isInvalid() && isa<MemberExpr>(Res.get()))
     CheckMemberAccessOfNoDeref(cast<MemberExpr>(Res.get()));

@@ -10423,6 +10423,8 @@ Sema::AddArgumentDependentLookupCandidates(DeclarationName Name,
   // right set of default arguments.  What default arguments are
   // we supposed to consider on ADL candidates, anyway?
 
+  llvm::ivls() << "Filter? " << (bool)Filter << "\n";
+
   // FIXME: Pass in the explicit template arguments?
   ArgumentDependentLookup(Name, Loc, Args, Fns, Filter);
 
@@ -14267,12 +14269,24 @@ void Sema::AddOverloadedCallCandidates(UnresolvedLookupExpr *ULE,
     // llvm::errs() << "added one " << __LINE__ << "\n";
   }
 
+  llvm::errs() << "Dumping overload set:\n";
+  for (auto&& Candidate : CandidateSet)
+    Candidate.Function->dump(llvm::errs());
+  llvm::errs() << "Done dumping overload set\n";
+
   // TODO: need to understand this
   // NOTE: memfn matching ufcs freefns would probably go through this?
   if (ULE->requiresADL())
     AddArgumentDependentLookupCandidates(ULE->getName(), ULE->getExprLoc(),
                                          Args, ExplicitTemplateArgs,
                                          CandidateSet, PartialOverloading, ULE->getFilter());
+
+  
+  llvm::errs() << "Dumping overload set:\n";
+  for (auto&& Candidate : CandidateSet)
+    Candidate.Function->dump(llvm::errs());
+  llvm::errs() << "Done dumping overload set\n";
+
 }
 
 void Sema::AddOverloadedCallCandidates(
@@ -14547,6 +14561,8 @@ bool Sema::buildOverloadedCallSet(Scope *S, Expr *Fn,
                                   SourceLocation RParenLoc,
                                   OverloadCandidateSet *CandidateSet,
                                   ExprResult *Result) {
+  llvm::ivls() << "Enter\n";
+  
 #ifndef NDEBUG
   if (ULE->requiresADL()) {
     // To do ADL, we must have found an unqualified name.
@@ -14778,6 +14794,10 @@ ExprResult Sema::BuildOverloadedCallExpr(Scope *S, Expr *Fn,
                                          Expr *ExecConfig,
                                          bool AllowTypoCorrection,
                                          bool CalleesAddressIsTaken) {
+  llvm::ivls() << "Enter, dumping\n";
+  Fn->dump();
+  ULE->dump();
+  llvm::ivls() << "Dump done\n";
 
   OverloadCandidateSet::CandidateSetKind CSK =
       CalleesAddressIsTaken ? OverloadCandidateSet::CSK_AddressOfOverloadSet
@@ -14792,10 +14812,10 @@ ExprResult Sema::BuildOverloadedCallExpr(Scope *S, Expr *Fn,
                              &result))
     return result;
 
-  // llvm::errs() << "Dumping overload set:\n";
-  // for (auto&& Candidate : CandidateSet)
-  //   Candidate.Function->dump(llvm::errs());
-  // llvm::errs() << "Done dumping overload set\n";
+  llvm::errs() << "Dumping overload set:\n";
+  for (auto&& Candidate : CandidateSet)
+    Candidate.Function->dump(llvm::errs());
+  llvm::errs() << "Done dumping overload set\n";
   // assert(false);
 
   // If the user handed us something like `(&Foo)(Bar)`, we need to ensure that
@@ -14861,6 +14881,8 @@ ExprResult Sema::CreateUnresolvedLookupExpr(CXXRecordDecl *NamingClass,
                                             DeclarationNameInfo DNI,
                                             const UnresolvedSetImpl &Fns,
                                             bool PerformADL) {
+  llvm::ivls() << "Enter\n";
+  
   return UnresolvedLookupExpr::Create(
       Context, NamingClass, NNSLoc, DNI, PerformADL, Fns.begin(), Fns.end(),
       /*KnownDependent=*/false, /*KnownInstantiationDependent=*/false);
