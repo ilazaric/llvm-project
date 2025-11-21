@@ -732,8 +732,6 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
   // diagnose them.
   bool AllowSuffix = true;
 
-  // llvm::ivls() << "Token: " << getTokenName(SavedKind) << "\n";
-
   // This handles all of cast-expression, unary-expression, postfix-expression,
   // and primary-expression.  We handle them together like this for efficiency
   // and to simplify handling of an expression starting with a '(' token: which
@@ -802,12 +800,12 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
 
     Res = Actions.ActOnNumericConstant(Tok, /*UDLScope*/getCurScope());
     ConsumeToken();
-    break; // TODO: doesn't seem to allow for suffix, maybe wrong
+    break;
 
   case tok::kw_true:
   case tok::kw_false:
     Res = ParseCXXBoolLiteral();
-    break; // TODO: doesn't seem to allow for suffix, maybe wrong
+    break;
 
   case tok::kw___objc_yes:
   case tok::kw___objc_no:
@@ -824,7 +822,6 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
     Res = Actions.ActOnCXXNullPtrLiteral(ConsumeToken());
     break;
 
-    // TODO: maybe i care about this
   case tok::annot_primary_expr:
   case tok::annot_overload_set:
     Res = getExprAnnotation(Tok);
@@ -919,8 +916,6 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
     IdentifierInfo &II = *Tok.getIdentifierInfo();
     SourceLocation ILoc = ConsumeToken();
 
-    { // NOTE: objc garbage
-      
     // Support 'Class.property' and 'super.property' notation.
     if (getLangOpts().ObjC && Tok.is(tok::period) &&
         (Actions.getTypeName(II, ILoc, getCurScope()) ||
@@ -961,7 +956,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
                                            nullptr);
       break;
     }
-    
+
     // If we have an Objective-C class name followed by an identifier
     // and either ':' or ']', this is an Objective-C class message
     // send that's missing the opening '['. Recovery
@@ -996,8 +991,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
             break;
           }
     }
-    }
-    
+
     // Make sure to pass down the right value for isAddressOfOperand.
     if (isAddressOfOperand && isPostfixExpressionSuffixStart())
       isAddressOfOperand = false;
@@ -1014,12 +1008,10 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
     if (Tok.isOneOf(tok::periodstar, tok::arrowstar)) {
       Validator.WantExpressionKeywords = false;
       Validator.WantRemainingKeywords = false;
-    }
-    else {
+    } else {
       Validator.WantRemainingKeywords = Tok.isNot(tok::r_paren);
     }
     Name.setIdentifier(&II, ILoc);
-    // TODO: looks important
     Res = Actions.ActOnIdExpression(
         getCurScope(), ScopeSpec, TemplateKWLoc, Name, Tok.is(tok::l_paren),
         isAddressOfOperand, &Validator,
@@ -1420,7 +1412,6 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
   }
 
   case tok::kw_operator: // [C++] id-expression: operator/conversion-function-id
-    // llvm::ivls() << "here\n";
     Res = ParseCXXIdExpression(isAddressOfOperand);
     break;
 
@@ -1591,7 +1582,6 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
     // parsed.
     return Res;
 
-  // TODO: go through this
   if (!AllowSuffix) {
     // FIXME: Don't parse a primary-expression suffix if we encountered a parse
     // error already.
@@ -1646,7 +1636,7 @@ Parser::ParseCastExpression(CastParseKind ParseKind, bool isAddressOfOperand,
 }
 
 ExprResult
-Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
+Parser::ParsePostfixExpressionSuffix(ExprResult LHS) {
   // Now that the primary-expression piece of the postfix-expression has been
   // parsed, see if there are any postfix-expression pieces here.
   SourceLocation Loc;
@@ -1658,7 +1648,6 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
     PreferredType = SavedType;
     switch (Tok.getKind()) {
     case tok::code_completion:
-      {
       if (InMessageExpression)
         return LHS;
 
@@ -1666,7 +1655,6 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
       Actions.CodeCompletion().CodeCompletePostfixExpression(
           getCurScope(), LHS, PreferredType.get(Tok.getLocation()));
       return ExprError();
-      }
 
     case tok::identifier:
       // If we see identifier: after an expression, and we're not already in a
@@ -1847,13 +1835,11 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
           else
             ExecConfig = ECResult.get();
         }
-      }
-      else {
+      } else {
         PT.consumeOpen();
         Loc = PT.getOpenLocation();
       }
 
-      // TODO: extend this with the pre-tok::period LHS
       ExprVector ArgExprs;
       auto RunSignatureHelp = [&]() -> QualType {
         QualType PreferredType =
@@ -1882,15 +1868,13 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
       // Match the ')'.
       if (LHS.isInvalid()) {
         SkipUntil(tok::r_paren, StopAtSemi);
-      }
-      else if (ExpressionListIsInvalid) {
+      } else if (ExpressionListIsInvalid) {
         Expr *Fn = LHS.get();
         ArgExprs.insert(ArgExprs.begin(), Fn);
         LHS = Actions.CreateRecoveryExpr(Fn->getBeginLoc(), Tok.getLocation(),
                                          ArgExprs);
         SkipUntil(tok::r_paren, StopAtSemi);
-      }
-      else if (Tok.isNot(tok::r_paren)) {
+      } else if (Tok.isNot(tok::r_paren)) {
         bool HadErrors = false;
         if (LHS.get()->containsErrors())
           HadErrors = true;
@@ -1905,8 +1889,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
         else
           PT.consumeClose();
         LHS = ExprError();
-      }
-      else {
+      } else {
         Expr *Fn = LHS.get();
         SourceLocation RParLoc = Tok.getLocation();
         // TODO: think more on next line
@@ -1939,19 +1922,13 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
       tok::TokenKind OpKind = Tok.getKind();
       SourceLocation OpLoc = ConsumeToken();  // Eat the "." or "->" token.
 
-      // llvm::ivls() << "token kind after period: " << getTokenName(Tok.getKind()) << "\n";
-
       CXXScopeSpec SS;
       ParsedType ObjectType;
       bool MayBePseudoDestructor = false;
       Expr* OrigLHS = !LHS.isInvalid() ? LHS.get() : nullptr;
 
-      // TODO
       PreferredType.enterMemAccess(Actions, Tok.getLocation(), OrigLHS);
 
-      // llvm::ivls() << "token kind after period: " << getTokenName(Tok.getKind()) << "\n";
-
-      // TODO: IMPORTANT
       if (getLangOpts().CPlusPlus && !LHS.isInvalid()) {
         Expr *Base = OrigLHS;
         const Type* BaseType = Base->getType().getTypePtrOrNull();
@@ -1964,15 +1941,9 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
           return ParsePostfixExpressionSuffix(Base);
         }
 
-
-        // llvm::ivls() << "token kind after period: " << getTokenName(Tok.getKind()) << "\n";
-
         LHS = Actions.ActOnStartCXXMemberReference(getCurScope(), Base, OpLoc,
                                                    OpKind, ObjectType,
                                                    MayBePseudoDestructor);
-
-        // llvm::ivls() << "token kind after period: " << getTokenName(Tok.getKind()) << "\n";
-
         if (LHS.isInvalid()) {
           // Clang will try to perform expression based completion as a
           // fallback, which is confusing in case of member references. So we
@@ -1983,16 +1954,12 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
           }
           break;
         }
-
-        // llvm::ivls() << "token kind after period: " << getTokenName(Tok.getKind()) << "\n";
         ParseOptionalCXXScopeSpecifier(
             SS, ObjectType, LHS.get() && LHS.get()->containsErrors(),
             /*EnteringContext=*/false, &MayBePseudoDestructor);
         if (SS.isNotEmpty())
           ObjectType = nullptr;
       }
-
-      // llvm::ivls() << "token kind after period: " << getTokenName(Tok.getKind()) << "\n";
 
       if (Tok.is(tok::code_completion)) {
         tok::TokenKind CorrectedOpKind =
@@ -2028,8 +1995,6 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
         break;
       }
 
-      // llvm::ivls() << "token kind after period: " << getTokenName(Tok.getKind()) << "\n";
-
       // Either the action has told us that this cannot be a
       // pseudo-destructor expression (based on the type of base
       // expression), or we didn't see a '~' in the right place. We
@@ -2051,8 +2016,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
         IdentifierInfo *Id = Tok.getIdentifierInfo();
         SourceLocation Loc = ConsumeToken();
         Name.setIdentifier(Id, Loc);
-      }
-      else { if (ParseUnqualifiedId(
+      } else if (ParseUnqualifiedId(
                      SS, ObjectType, LHS.get() && LHS.get()->containsErrors(),
                      /*EnteringContext=*/false,
                      /*AllowDestructorName=*/true,
@@ -2060,11 +2024,7 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
                      getLangOpts().MicrosoftExt && SS.isNotEmpty(),
                      /*AllowDeductionGuide=*/false, &TemplateKWLoc, Name)) {
         LHS = ExprError();
-        }}
-
-      // NOTE: ParseUnqualifiedId doesn't parse the template part when the memfn doesnt exist
-      // llvm::ivls() << "!!! important !!!\n";
-      // Name.getSourceRange().dump(Actions.getSourceManager());
+      }
 
       if (!LHS.isInvalid()) {
         IVL_BLA = LHS.get();

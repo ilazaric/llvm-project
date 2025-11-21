@@ -6884,7 +6884,6 @@ static void noteOperatorArrows(Sema &S,
   }
 }
 
-// NOTE: this doesnt seem to do anything interesting
 ExprResult Sema::ActOnStartCXXMemberReference(Scope *S, Expr *Base,
                                               SourceLocation OpLoc,
                                               tok::TokenKind OpKind,

@@ -2476,8 +2476,6 @@ bool Sema::LookupQualifiedName(LookupResult &R, DeclContext *LookupCtx,
     }
   }
 
-  // TODO: LookupDirect seems to populate garbage
-  // TODO-x: filtering upstream now
   if (LookupDirect(*this, R, LookupCtx)) {
     R.resolveKind();
     if (LookupRec)
@@ -2696,7 +2694,7 @@ bool Sema::LookupQualifiedName(LookupResult &R, DeclContext *LookupCtx,
     AccessSpecifier AS = CXXRecordDecl::MergeAccess(SubobjectAccess,
                                                     (*I)->getAccess());
     if (NamedDecl *ND = R.getAcceptableDecl(*I))
-      R.addDecl(ND, AS); // TODO: this might be important
+      R.addDecl(ND, AS);
   }
   R.resolveKind();
   return true;
