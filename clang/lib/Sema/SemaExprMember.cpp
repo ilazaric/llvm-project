@@ -590,6 +590,8 @@ Sema::ActOnDependentMemberExpr(Expr *BaseExpr, QualType BaseType,
                                        })));
 
   auto try_to_do_ivl_ufcs_lookup = [&] -> Expr* {
+    // TODO: this if shouldnt be necessary here, but these lookups should be refactored out
+    if (!getLangOpts().CPlusPlus) return nullptr;
     const DeclarationNameInfo &MemberNameInfo = NameInfo;
     DeclarationName MemberName = MemberNameInfo.getName();
     SourceLocation MemberLoc = MemberNameInfo.getLoc();
@@ -703,7 +705,7 @@ ExprResult Sema::BuildMemberReferenceExpr(
     CXXScopeSpec &SS, SourceLocation TemplateKWLoc,
     NamedDecl *FirstQualifierInScope, const DeclarationNameInfo &NameInfo,
     const TemplateArgumentListInfo *TemplateArgs, const Scope *S,
-    ActOnMemberAccessExtraArgs *ExtraArgs, Expr* IVL, UnqualifiedId* Id) {
+    ActOnMemberAccessExtraArgs *ExtraArgs, Expr* IVL, UnqualifiedId* Id, bool doIVLLookup) {
   LookupResult R(*this, NameInfo, LookupMemberName);
 
   // Implicit member accesses.
@@ -744,7 +746,7 @@ ExprResult Sema::BuildMemberReferenceExpr(
   return BuildMemberReferenceExpr(Base, BaseType,
                                   OpLoc, IsArrow, SS, TemplateKWLoc,
                                   FirstQualifierInScope, R, TemplateArgs, S,
-                                  false, ExtraArgs, IVL, Id);
+                                  false, ExtraArgs, IVL, Id, doIVLLookup);
 }
 
 ExprResult
@@ -894,7 +896,8 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
                                bool SuppressQualifierCheck,
                                ActOnMemberAccessExtraArgs *ExtraArgs,
                                Expr* IVL,
-                               UnqualifiedId* Id) {
+                               UnqualifiedId* Id,
+                               bool doIVLLookup) {
   assert(!SS.isInvalid() && "nested-name-specifier cannot be invalid");
   // If the member wasn't found in the current instantiation, or if the
   // arrow operator was used with a dependent non-pointer object expression,
@@ -939,6 +942,8 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
         << isa<CXXDestructorDecl>(FD);
 
    auto try_to_do_ivl_ufcs_lookup = [&] -> ExprResult {
+     if (!doIVLLookup) return ExprError();
+     if (!getLangOpts().CPlusPlus) return ExprError();
      if (S == nullptr){
        if (IVL) return IVL;
        return ExprError();
@@ -960,10 +965,12 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
      // llvm::ivls() << "Dumping ivl lookup\n";
      // if (Ret.isInvalid()) llvm::ivls() << "broken\n";
      // else Ret.get()->dump();
+     // llvm::ivls() << "Done Dumping ivl lookup\n";
      // assert(false);
      if (isa<UnresolvedLookupExpr>(Ret.get())) {
        cast<UnresolvedLookupExpr>(Ret.get())->setFilter(Filter);
      }
+
      return Ret;
    };
  
@@ -1746,7 +1753,7 @@ ExprResult Sema::ActOnMemberAccessExpr(Scope *S, Expr *Base,
                                        SourceLocation OpLoc,
                                        tok::TokenKind OpKind, CXXScopeSpec &SS,
                                        SourceLocation TemplateKWLoc,
-                                       UnqualifiedId &Id, Decl *ObjCImpDecl) {
+                                       UnqualifiedId &Id, Decl *ObjCImpDecl, bool doIVLLookup) {
   // Warn about the explicit constructor calls Microsoft extension.
   if (getLangOpts().MicrosoftExt &&
       Id.getKind() == UnqualifiedIdKind::IK_ConstructorName)
@@ -1777,7 +1784,7 @@ ExprResult Sema::ActOnMemberAccessExpr(Scope *S, Expr *Base,
   ActOnMemberAccessExtraArgs ExtraArgs = {S, Id, ObjCImpDecl};
   ExprResult Res = BuildMemberReferenceExpr(
       Base, Base->getType(), OpLoc, IsArrow, SS, TemplateKWLoc,
-      FirstQualifierInScope, NameInfo, TemplateArgs, S, &ExtraArgs, nullptr, &Id);
+      FirstQualifierInScope, NameInfo, TemplateArgs, S, &ExtraArgs, nullptr, &Id, doIVLLookup);
 
   if (!Res.isInvalid() && isa<MemberExpr>(Res.get()))
     CheckMemberAccessOfNoDeref(cast<MemberExpr>(Res.get()));

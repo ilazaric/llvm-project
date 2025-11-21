@@ -3673,7 +3673,7 @@ public:
                                             MemberNameInfo,
                                             TemplateArgs, /*S*/nullptr,
                                             /*ExtraArgs*/nullptr,
-                                            IVL);
+                                            IVL, nullptr, true); // TODO: should only be true if immediately called
   }
 
   /// Build a new member reference expression.

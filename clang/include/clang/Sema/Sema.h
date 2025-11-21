@@ -8891,7 +8891,7 @@ public:
   ExprResult ActOnMemberAccessExpr(Scope *S, Expr *Base, SourceLocation OpLoc,
                                    tok::TokenKind OpKind, CXXScopeSpec &SS,
                                    SourceLocation TemplateKWLoc,
-                                   UnqualifiedId &Member, Decl *ObjCImpDecl);
+                                   UnqualifiedId &Member, Decl *ObjCImpDecl, bool doIVLLookup = false);
 
   MemberExpr *
   BuildMemberExpr(Expr *Base, bool IsArrow, SourceLocation OpLoc,
@@ -8936,7 +8936,8 @@ public:
       const TemplateArgumentListInfo *TemplateArgs, const Scope *S,
       ActOnMemberAccessExtraArgs *ExtraArgs = nullptr,
       Expr* CachedIVL = nullptr,
-      UnqualifiedId* Id = nullptr);
+      UnqualifiedId* Id = nullptr,
+      bool doIVLLookup = false);
 
   ExprResult
   BuildMemberReferenceExpr(Expr *Base, QualType BaseType, SourceLocation OpLoc,
@@ -8947,7 +8948,8 @@ public:
                            const Scope *S, bool SuppressQualifierCheck = false,
                            ActOnMemberAccessExtraArgs *ExtraArgs = nullptr,
                            Expr* CachedIVL = nullptr,
-                           UnqualifiedId* Id = nullptr);
+                           UnqualifiedId* Id = nullptr,
+                           bool doIVLLookup = false);
 
   ExprResult BuildFieldReferenceExpr(Expr *BaseExpr, bool IsArrow,
                                      SourceLocation OpLoc,

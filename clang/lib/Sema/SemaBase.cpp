@@ -63,7 +63,7 @@ Sema::SemaDiagnosticBuilder SemaBase::Diag(SourceLocation Loc,
   bool IsError =
       getDiagnostics().getDiagnosticIDs()->isDefaultMappingAsError(DiagID);
   if (IsError){
-    llvm::ivls() << "Diagnostic invoked from " << loc.file_name() << ":" << loc.line() << " `" << loc.function_name() << "`\n";
+    // llvm::ivls() << "Diagnostic invoked from " << loc.file_name() << ":" << loc.line() << " `" << loc.function_name() << "`\n";
     // assert(false);
   }
   bool ShouldDefer = getLangOpts().CUDA && getLangOpts().GPUDeferDiag &&

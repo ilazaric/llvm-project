@@ -2072,14 +2072,26 @@ Parser::ParsePostfixExpressionSuffix(ExprResult LHS, std::source_location loc) {
         // NOTE: this goes from DeclRefExpr to UnresolvedMemberExpr
         // NOTE: we would make it possibly go to UnresolvedLookupExpr
         // TODO: where do i store the expression before tok::period ?
+        // llvm::ivls() << "HERE\n";
+        // llvm::ivls() << "Tok before act: " << getTokenName(Tok.getKind()) << "\n";
+        // TODO: if Tok != l_paren , don't do ivl::ufcs lookup
+        bool shouldAttemptIVLUFCSLookup =
+          getLangOpts().CPlusPlus && Tok.getKind() == tok::l_paren;
         LHS = Actions.ActOnMemberAccessExpr(getCurScope(), LHS.get(), OpLoc,
                                             OpKind, SS, TemplateKWLoc, Name,
-                                 CurParsedObjCImpl ? CurParsedObjCImpl->Dcl
-                                                   : nullptr);
+                                            CurParsedObjCImpl ? CurParsedObjCImpl->Dcl
+                                            : nullptr,
+                                            shouldAttemptIVLUFCSLookup);
+
+        // llvm::ivls() << "HERE\n";
+        // LHS.get()->dump();
+        // llvm::ivls() << "HERE\n";
+        // llvm::ivls() << "Tok after act: " << getTokenName(Tok.getKind()) << "\n";
+        
         // TODO: check if this if is good
         // NOTE: would be better to just report back from ActOnMemberAccessExpr
         // ....: if it went through [[ivl::ufcs]] mechanism 
-        if (LHS.isInvalid() || isa<UnresolvedMemberExpr, CXXDependentScopeMemberExpr, MemberExpr>(LHS.get()))
+        if (!shouldAttemptIVLUFCSLookup || LHS.isInvalid() || isa<UnresolvedMemberExpr, CXXDependentScopeMemberExpr, MemberExpr>(LHS.get()))
           IVL_BLA = nullptr;
       }
       if (!LHS.isInvalid()) {
