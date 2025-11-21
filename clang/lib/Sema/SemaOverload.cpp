@@ -14269,10 +14269,10 @@ void Sema::AddOverloadedCallCandidates(UnresolvedLookupExpr *ULE,
     // llvm::errs() << "added one " << __LINE__ << "\n";
   }
 
-  llvm::errs() << "Dumping overload set:\n";
-  for (auto&& Candidate : CandidateSet)
-    Candidate.Function->dump(llvm::errs());
-  llvm::errs() << "Done dumping overload set\n";
+  // llvm::errs() << "Dumping overload set:\n";
+  // for (auto&& Candidate : CandidateSet)
+  //   Candidate.Function->dump(llvm::errs());
+  // llvm::errs() << "Done dumping overload set\n";
 
   // TODO: need to understand this
   // NOTE: memfn matching ufcs freefns would probably go through this?
@@ -14282,10 +14282,10 @@ void Sema::AddOverloadedCallCandidates(UnresolvedLookupExpr *ULE,
                                          CandidateSet, PartialOverloading, ULE->getFilter());
 
   
-  llvm::errs() << "Dumping overload set:\n";
-  for (auto&& Candidate : CandidateSet)
-    Candidate.Function->dump(llvm::errs());
-  llvm::errs() << "Done dumping overload set\n";
+  // llvm::errs() << "Dumping overload set:\n";
+  // for (auto&& Candidate : CandidateSet)
+  //   Candidate.Function->dump(llvm::errs());
+  // llvm::errs() << "Done dumping overload set\n";
 
 }
 
@@ -14794,10 +14794,10 @@ ExprResult Sema::BuildOverloadedCallExpr(Scope *S, Expr *Fn,
                                          Expr *ExecConfig,
                                          bool AllowTypoCorrection,
                                          bool CalleesAddressIsTaken) {
-  llvm::ivls() << "Enter, dumping\n";
-  Fn->dump();
-  ULE->dump();
-  llvm::ivls() << "Dump done\n";
+  // llvm::ivls() << "Enter, dumping\n";
+  // Fn->dump();
+  // ULE->dump();
+  // llvm::ivls() << "Dump done\n";
 
   OverloadCandidateSet::CandidateSetKind CSK =
       CalleesAddressIsTaken ? OverloadCandidateSet::CSK_AddressOfOverloadSet
@@ -14812,11 +14812,11 @@ ExprResult Sema::BuildOverloadedCallExpr(Scope *S, Expr *Fn,
                              &result))
     return result;
 
-  llvm::errs() << "Dumping overload set:\n";
-  for (auto&& Candidate : CandidateSet)
-    Candidate.Function->dump(llvm::errs());
-  llvm::errs() << "Done dumping overload set\n";
-  // assert(false);
+  // llvm::errs() << "Dumping overload set:\n";
+  // for (auto&& Candidate : CandidateSet)
+  //   Candidate.Function->dump(llvm::errs());
+  // llvm::errs() << "Done dumping overload set\n";
+  // // assert(false);
 
   // If the user handed us something like `(&Foo)(Bar)`, we need to ensure that
   // functions that aren't addressible are considered unviable.

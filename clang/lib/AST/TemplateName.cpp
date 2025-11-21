@@ -319,8 +319,9 @@ DependentTemplateStorage::DependentTemplateStorage(
     NestedNameSpecifier Qualifier, IdentifierOrOverloadedOperator Name,
     bool HasTemplateKeyword)
     : Qualifier(Qualifier, HasTemplateKeyword), Name(Name) {
-  assert((!Qualifier || Qualifier.isDependent()) &&
-         "Qualifier must be dependent");
+  // TODO
+  // assert((!Qualifier || Qualifier.isDependent()) &&
+  //        "Qualifier must be dependent");
 }
 
 TemplateNameDependence DependentTemplateStorage::getDependence() const {

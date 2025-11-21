@@ -957,9 +957,9 @@ Sema::BuildMemberReferenceExpr(Expr *BaseExpr, QualType BaseExprType,
          TemplateKWLoc, Name, true, false, nullptr, false, nullptr,
          Filter
 );
-     llvm::ivls() << "Dumping ivl lookup\n";
-     if (Ret.isInvalid()) llvm::ivls() << "broken\n";
-     else Ret.get()->dump();
+     // llvm::ivls() << "Dumping ivl lookup\n";
+     // if (Ret.isInvalid()) llvm::ivls() << "broken\n";
+     // else Ret.get()->dump();
      // assert(false);
      if (isa<UnresolvedLookupExpr>(Ret.get())) {
        cast<UnresolvedLookupExpr>(Ret.get())->setFilter(Filter);

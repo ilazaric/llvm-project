@@ -2725,8 +2725,8 @@ Sema::ActOnIdExpression(Scope *S, CXXScopeSpec &SS,
                         CorrectionCandidateCallback *CCC,
                         bool IsInlineAsmIdentifier, Token *KeywordReplacement,
                         std::function<bool(Decl*)> LookupFilterFn) {
-  llvm::ivls() << "Enter\n";
-  Id.getSourceRange().dump(getSourceManager());
+  // llvm::ivls() << "Enter\n";
+  // Id.getSourceRange().dump(getSourceManager());
   // assert(false && "give me stacktrace");
   assert(!(IsAddressOfOperand && HasTrailingLParen) &&
          "cannot be direct & operand and have a trailing lparen");

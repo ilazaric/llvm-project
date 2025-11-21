@@ -1,4 +1,5 @@
 #include <vector>
+#include <iostream>
 
 #ifndef _LIBCPP_IVL_UFCS_UTILS
 #define _LIBCPP_IVL_UFCS_UTILS
@@ -6,6 +7,7 @@
 #include <concepts>
 #include <memory>
 #include <type_traits>
+#include <ranges>
 
 namespace ufcs {
 
@@ -50,12 +52,26 @@ template <template <typename...> typename TT>
   })(std::forward<decltype(args)>(args)...);
 }
 
+  [[ivl::ufcs]]
+  auto filter(auto&& rg, auto&& pred) {
+    return std::forward<decltype(rg)>(rg) | std::views::filter(std::forward<decltype(pred)>(pred));
+  }
+
 } // namespace ufcs
 
 #endif // _LIBCPP_IVL_UFCS_UTILS
 
-void use() {
-  std::vector<int> vec;
-  ufcs::convert<std::vector>(vec, std::from_range, ufcs::_this);
-  vec.ufcs::convert<std::vector>(std::from_range, ufcs::_this);
+int main() {
+  // std::vector<int> vec;
+  // // ufcs::convert<std::vector>(vec, std::from_range, ufcs::_this);
+  // vec.ufcs::template convert<std::vector>(std::from_range, ufcs::_this);
+
+  auto vec =
+    std::views::iota(0, 20)
+    .ufcs::filter([](int x){ return x % 3 == 1; })
+    .ufcs::template convert<std::vector>(std::from_range, ufcs::_this);
+
+  std::cout << "Vector size: " << vec.size() << std::endl;
+  for (auto el : vec)
+    std::cout << "Element: " << el << std::endl;
 }

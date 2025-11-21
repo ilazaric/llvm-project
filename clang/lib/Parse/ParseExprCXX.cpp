@@ -109,7 +109,7 @@ bool Parser::ParseOptionalCXXScopeSpecifier(
     bool EnteringContext, bool *MayBePseudoDestructor, bool IsTypename,
     const IdentifierInfo **LastII, bool OnlyNamespace, bool InUsingDeclaration,
     bool Disambiguation) {
-  llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+  // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
   
   assert(getLangOpts().CPlusPlus &&
          "Call sites of this function should be guarded by checking for C++");
@@ -165,7 +165,7 @@ bool Parser::ParseOptionalCXXScopeSpecifier(
     return Actions.ActOnSuperScopeSpecifier(SuperLoc, ConsumeToken(), SS);
   }
 
-  llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+  // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
 
   if (!HasScopeSpecifier &&
       Tok.isOneOf(tok::kw_decltype, tok::annot_decltype)) {
@@ -231,13 +231,13 @@ bool Parser::ParseOptionalCXXScopeSpecifier(
     HasScopeSpecifier = true;
   }
 
-  llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+  // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
 
   // Preferred type might change when parsing qualifiers, we need the original.
   auto SavedType = PreferredType;
   while (true) {
-    llvm::ivls() << "loop\n";
-    llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+    // llvm::ivls() << "loop\n";
+    // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
     
     if (HasScopeSpecifier) {
       if (Tok.is(tok::code_completion)) {
@@ -490,22 +490,22 @@ bool Parser::ParseOptionalCXXScopeSpecifier(
       continue;
     }
 
-    llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+    // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
     
     CheckForTemplateAndDigraph(Next, ObjectType, EnteringContext, II, SS);
 
-    llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+    // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
 
     // nested-name-specifier:
     //   type-name '<'
     if (Next.is(tok::less)) {
-      llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+      // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
 
       TemplateTy Template;
       UnqualifiedId TemplateName;
       TemplateName.setIdentifier(&II, Tok.getLocation());
       bool MemberOfUnknownSpecialization;
-      llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+      // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
       if (TemplateNameKind TNK = Actions.isTemplateName(
               getCurScope(), SS,
               /*hasTemplateKeyword=*/false, TemplateName, ObjectType,
@@ -533,7 +533,7 @@ bool Parser::ParseOptionalCXXScopeSpecifier(
         continue;
       }
 
-      llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+      // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
       if (MemberOfUnknownSpecialization && !Disambiguation &&
           (ObjectType || SS.isSet()) &&
           (IsTypename || isTemplateArgumentList(1) == TPResult::True)) {
@@ -566,14 +566,14 @@ bool Parser::ParseOptionalCXXScopeSpecifier(
       }
     }
 
-    llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+    // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
 
     // We don't have any tokens that form the beginning of a
     // nested-name-specifier, so we're done.
     break;
   }
 
-  llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+  // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
 
   // Even if we didn't see any pieces of a nested-name-specifier, we
   // still check whether there is a tilde in this position, which
@@ -587,14 +587,14 @@ bool Parser::ParseOptionalCXXScopeSpecifier(
 ExprResult Parser::tryParseCXXIdExpression(CXXScopeSpec &SS,
                                            bool isAddressOfOperand,
                                            Token &Replacement) {
-  llvm::ivls() << "Enter\n";
+  // llvm::ivls() << "Enter\n";
   ExprResult E;
 
-  llvm::ivls() << "Dumping E\n";
-  if (E.isInvalid()) llvm::ivls() << "broken\n";
-  else E.get()->dump();
+  // llvm::ivls() << "Dumping E\n";
+  // if (E.isInvalid()) llvm::ivls() << "broken\n";
+  // else E.get()->dump();
 
-  llvm::ivls() << "Token kind: " << getTokenName(Tok.getKind()) << "\n";
+  // llvm::ivls() << "Token kind: " << getTokenName(Tok.getKind()) << "\n";
 
   // We may have already annotated this id-expression.
   switch (Tok.getKind()) {
@@ -645,18 +645,18 @@ ExprResult Parser::tryParseCXXIdExpression(CXXScopeSpec &SS,
     if (isAddressOfOperand && isPostfixExpressionSuffixStart())
       isAddressOfOperand = false;
 
-    llvm::ivls() << "here\n";
+    // llvm::ivls() << "here\n";
     E = Actions.ActOnIdExpression(
         getCurScope(), SS, TemplateKWLoc, Name, Tok.is(tok::l_paren),
         isAddressOfOperand, /*CCC=*/nullptr, /*IsInlineAsmIdentifier=*/false,
         &Replacement);
-    llvm::ivls() << "here\n";
+    // llvm::ivls() << "here\n";
     break;
   }
 
-  llvm::ivls() << "Dumping E\n";
-  if (E.isInvalid()) llvm::ivls() << "broken\n";
-  else E.get()->dump();
+  // llvm::ivls() << "Dumping E\n";
+  // if (E.isInvalid()) llvm::ivls() << "broken\n";
+  // else E.get()->dump();
 
   // Might be a pack index expression!
   E = tryParseCXXPackIndexingExpression(E);
@@ -664,9 +664,9 @@ ExprResult Parser::tryParseCXXIdExpression(CXXScopeSpec &SS,
   if (!E.isInvalid() && !E.isUnset() && Tok.is(tok::less))
     checkPotentialAngleBracket(E);
 
-  llvm::ivls() << "Dumping E\n";
-  if (E.isInvalid()) llvm::ivls() << "broken\n";
-  else E.get()->dump();
+  // llvm::ivls() << "Dumping E\n";
+  // if (E.isInvalid()) llvm::ivls() << "broken\n";
+  // else E.get()->dump();
   
   return E;
 }
@@ -2622,7 +2622,7 @@ bool Parser::ParseUnqualifiedId(CXXScopeSpec &SS, ParsedType ObjectType,
   if (TemplateKWLoc)
     *TemplateKWLoc = SourceLocation();
 
-  llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
+  // llvm::ivls() << "token kind: " << getTokenName(Tok.getKind()) << "\n";
 
   // Handle 'A::template B'. This is for template-ids which have not
   // already been annotated by ParseOptionalCXXScopeSpecifier().
@@ -2678,13 +2678,13 @@ bool Parser::ParseUnqualifiedId(CXXScopeSpec &SS, ParsedType ObjectType,
 
     // If the next token is a '<', we may have a template.
     TemplateTy Template;
-    llvm::ivls() << "?!?!?!?!\n";
+    // llvm::ivls() << "?!?!?!?!\n";
     if (Tok.is(tok::less))
       return ParseUnqualifiedIdTemplateId(
           SS, ObjectType, ObjectHadErrors,
           TemplateKWLoc ? *TemplateKWLoc : SourceLocation(), Id, IdLoc,
           EnteringContext, Result, TemplateSpecified);
-    llvm::ivls() << "?!?!?!?!\n";
+    // llvm::ivls() << "?!?!?!?!\n";
 
     if (TemplateSpecified) {
       TemplateNameKind TNK =

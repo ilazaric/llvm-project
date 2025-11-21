@@ -153,6 +153,7 @@ void Sema::FilterAcceptableTemplateNames(LookupResult &R,
                                          bool AllowDependent) {
   LookupResult::Filter filter = R.makeFilter();
   while (filter.hasNext()) {
+    // TODO: check if this needs to be changed to pass free fn templates
     NamedDecl *Orig = filter.next();
     if (!getAsTemplateNameDecl(Orig, AllowFunctionTemplates, AllowDependent))
       filter.erase();
@@ -514,7 +515,7 @@ bool Sema::LookupTemplateName(LookupResult &Found, Scope *S, CXXScopeSpec &SS,
     }
   }
 
-  if (Found.empty() && !IsDependent && AllowTypoCorrection) {
+  if (Found.empty() && !IsDependent && AllowTypoCorrection && false) {
     // If we did not find any names, and this is not a disambiguation, attempt
     // to correct any typos.
     DeclarationName Name = Found.getLookupName();
