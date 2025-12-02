@@ -3858,6 +3858,13 @@ def WarnUnusedResult : InheritableAttr {
   }];
 }
 
+def IvlNrvo : InheritableAttr {
+  let Spellings = [CXX11<"ivl", "nrvo">];
+  let Subjects = SubjectList<[Var]>;
+  let Documentation = [Undocumented];
+  let SimpleHandler = 1;
+}
+
 def Weak : InheritableAttr {
   let Spellings = [GCC<"weak">];
   let Subjects = SubjectList<[Var, Function, CXXRecord]>;
