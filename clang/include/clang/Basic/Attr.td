@@ -3860,7 +3860,7 @@ def WarnUnusedResult : InheritableAttr {
 
 def IvlNrvo : InheritableAttr {
   let Spellings = [CXX11<"ivl", "nrvo">];
-  let Subjects = SubjectList<[Var]>;
+  let Subjects = SubjectList<[NonParmVar]>;
   let Documentation = [Undocumented];
   let SimpleHandler = 1;
 }
