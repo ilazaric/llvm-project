@@ -911,6 +911,11 @@ raw_ostream &llvm::nulls() {
   return S;
 }
 
+/// ivls() - debugging stream, either errs or nulls.
+raw_ostream &llvm::ivls() {
+  return errs();
+}
+
 //===----------------------------------------------------------------------===//
 // File Streams
 //===----------------------------------------------------------------------===//

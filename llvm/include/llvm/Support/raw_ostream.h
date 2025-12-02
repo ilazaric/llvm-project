@@ -620,6 +620,9 @@ LLVM_ABI raw_fd_ostream &errs();
 /// This returns a reference to a raw_ostream which simply discards output.
 LLVM_ABI raw_ostream &nulls();
 
+LLVM_ABI raw_ostream &ivls();
+#define IVLS() (::llvm::ivls() << "IVL [" << __func__ << ":" << __LINE__ << "] ")
+
 //===----------------------------------------------------------------------===//
 // File Streams
 //===----------------------------------------------------------------------===//
