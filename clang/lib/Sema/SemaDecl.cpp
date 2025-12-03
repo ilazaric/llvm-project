@@ -8400,6 +8400,17 @@ NamedDecl *Sema::ActOnVariableDeclarator(
 
   emitReadOnlyPlacementAttrWarning(*this, NewVD);
 
+  // llvm::errs() << "Dumping NewVD ...\n";
+  // NewVD->dump();
+
+  if (NewVD->hasAttr<IvlNrvoAttr>()) {
+    // llvm::errs() << "this has my attribute :D\n";
+    auto FSI = getCurFunction();
+    assert(FSI);
+    FSI->IvlNrvoVars.push_back(NewVD);
+    // assert(false && "stacktrace pls");
+  }
+  
   return NewVD;
 }
 

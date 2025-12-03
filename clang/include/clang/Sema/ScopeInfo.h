@@ -213,6 +213,9 @@ public:
   /// optimization, or if we need to infer a return type.
   SmallVector<ReturnStmt*, 4> Returns;
 
+  /// The list of [[ivl::nrvo]] variables.
+  SmallVector<VarDecl*, 4> IvlNrvoVars;
+
   /// The promise object for this coroutine, if any.
   VarDecl *CoroutinePromise = nullptr;
 

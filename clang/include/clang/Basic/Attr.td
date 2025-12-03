@@ -100,6 +100,9 @@ class SubsetSubject<AttrSubject base, code check, string diag> : AttrSubject {
 def LocalVar : SubsetSubject<Var,
                               [{S->hasLocalStorage() && !isa<ParmVarDecl>(S)}],
                               "local variables">;
+def NRVOEligibleVar : SubsetSubject<Var,
+                              [{S->hasLocalStorage() && !isa<ParmVarDecl>(S) && !S->isExceptionVariable()}],
+                              "NRVO eligible variables">;
 def NonParmVar : SubsetSubject<Var,
                                [{S->getKind() != Decl::ParmVar}],
                                "variables">;
@@ -3860,7 +3863,7 @@ def WarnUnusedResult : InheritableAttr {
 
 def IvlNrvo : InheritableAttr {
   let Spellings = [CXX11<"ivl", "nrvo">];
-  let Subjects = SubjectList<[LocalVar]>;
+  let Subjects = SubjectList<[NRVOEligibleVar]>;
   let Documentation = [Undocumented];
   let SimpleHandler = 1;
 }

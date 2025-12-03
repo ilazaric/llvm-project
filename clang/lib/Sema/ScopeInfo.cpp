@@ -51,6 +51,7 @@ void FunctionScopeInfo::Clear() {
 
   SwitchStack.clear();
   Returns.clear();
+  IvlNrvoVars.clear();
   ErrorTrap.reset();
   PossiblyUnreachableDiags.clear();
   WeakObjectUses.clear();
