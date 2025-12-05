@@ -215,6 +215,9 @@ public:
 
   /// The list of [[ivl::nrvo]] variables.
   SmallVector<VarDecl*, 4> IvlNrvoVars;
+  /// Scope of last [[ivl::nrvo]] variable.
+  // TODO: maybe can be deduced from VarDecl
+  const Scope* IvlNrvoVarScope;
 
   /// The promise object for this coroutine, if any.
   VarDecl *CoroutinePromise = nullptr;

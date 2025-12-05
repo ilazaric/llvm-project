@@ -8400,17 +8400,37 @@ NamedDecl *Sema::ActOnVariableDeclarator(
 
   emitReadOnlyPlacementAttrWarning(*this, NewVD);
 
-  // llvm::errs() << "Dumping NewVD ...\n";
-  // NewVD->dump();
-
   if (NewVD->hasAttr<IvlNrvoAttr>()) {
-    // llvm::errs() << "this has my attribute :D\n";
     auto FSI = getCurFunction();
     assert(FSI);
+
+    if (!FSI->IvlNrvoVars.empty()){
+      auto LastVar = FSI->IvlNrvoVars.back();
+      auto LastScope = FSI->IvlNrvoVarScope;
+      assert(LastVar);
+      assert(LastScope);
+
+      auto ParentScope = getCurScope();
+      while (ParentScope && ParentScope->getDepth() > LastScope->getDepth())
+        ParentScope = ParentScope->getParent();
+
+      if (LastScope == ParentScope) {
+        auto attr = NewVD->getAttr<IvlNrvoAttr>();
+        auto prevAttr = LastVar->getAttr<IvlNrvoAttr>();
+        Diag(attr->getLoc(), diag::err_attribute_ivl_nrvo_multiple_variables) << attr->getRange();
+        Diag(prevAttr->getLoc(), diag::note_attribute_ivl_nrvo_previous_variable) << prevAttr->getRange();
+        // Slight attempt at recovery for improved diagnostics down the line.
+        NewVD->dropAttr<IvlNrvoAttr>();
+        goto PostIvlNrvoChecks;
+      }
+    }
+    
     FSI->IvlNrvoVars.push_back(NewVD);
-    // assert(false && "stacktrace pls");
+    // TODO: can Scope* be computed from a VarDecl* ?
+    FSI->IvlNrvoVarScope = S;
   }
   
+ PostIvlNrvoChecks:
   return NewVD;
 }
 

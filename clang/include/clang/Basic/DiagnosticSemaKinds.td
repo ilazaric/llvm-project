@@ -3311,6 +3311,10 @@ def err_attribute_ivl_nrvo_type_mismatch : Error<
   "variable of type %0 different from function return type cannot be marked [[ivl::nrvo]]">;
 def err_attribute_ivl_nrvo_reference_return_type : Error<
   "[[ivl::nrvo]] cannot be used in functions that return reference type">;
+def err_attribute_ivl_nrvo_multiple_variables : Error<
+  "cannot have multiple variables marked [[ivl::nrvo]] alive at same time">;
+def note_attribute_ivl_nrvo_previous_variable : Note<
+  "previous variable here">;
 def note_attribute_ivl_nrvo_return_type : Note<
   "function return type is %0">;
 def err_attribute_invalid_argument : Error<
