@@ -16397,6 +16397,43 @@ Decl *Sema::ActOnFinishFunctionBody(Decl *dcl, Stmt *Body, bool IsInstantiation,
   FunctionScopeInfo *FSI = getCurFunction();
   FunctionDecl *FD = dcl ? dcl->getAsFunction() : nullptr;
 
+  if (FD && !FSI->IvlNrvoVars.empty()) {
+    for (VarDecl* VD : FSI->IvlNrvoVars)
+      assert(VD->hasAttr<IvlNrvoAttr>());
+    
+    // TODO: maybe purge [[ivl::nrvo]] ?
+    VarDecl* FirstVar = FSI->IvlNrvoVars.front();
+    if (isa<CXXConstructorDecl, CXXDestructorDecl>(FD)) {
+      auto attr = FirstVar->getAttr<IvlNrvoAttr>();
+      Diag(attr->getLoc(), diag::err_attribute_ivl_nrvo_special_function) << (int)isa<CXXDestructorDecl>(FD) << attr->getRange();
+      goto IvlNrvoChecksEnd;
+    }
+
+    QualType ReturnType = FD->getReturnType();
+    SourceRange ReturnTypeRange = FD->getReturnTypeSourceRange();
+    SourceLocation ReturnTypeLocation = ReturnTypeRange.getBegin();
+    if (ReturnType->isReferenceType()) {
+      auto attr = FirstVar->getAttr<IvlNrvoAttr>();
+      Diag(attr->getLoc(), diag::err_attribute_ivl_nrvo_reference_return_type) << attr->getRange();
+      Diag(ReturnTypeLocation, diag::note_attribute_ivl_nrvo_return_type) << ReturnType << ReturnTypeRange;
+      goto IvlNrvoChecksEnd;
+    }
+
+    bool SeenFailure = false;
+    for (auto VD : FSI->IvlNrvoVars) {
+      if (ReturnType != VD->getType()) {
+        SeenFailure = true;
+        auto attr = VD->getAttr<IvlNrvoAttr>();
+        Diag(attr->getLoc(), diag::err_attribute_ivl_nrvo_type_mismatch) << VD->getType() << attr->getRange();
+      }
+    }
+    if (SeenFailure) {
+      Diag(ReturnTypeLocation, diag::note_attribute_ivl_nrvo_return_type) << ReturnType << ReturnTypeRange;
+    }
+  }
+  
+ IvlNrvoChecksEnd:;
+
   if (FSI->UsesFPIntrin && FD && !FD->hasAttr<StrictFPAttr>())
     FD->addAttr(StrictFPAttr::CreateImplicit(Context));
 

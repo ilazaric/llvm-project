@@ -3305,6 +3305,14 @@ def err_nsobject_attribute : Error<
   "'NSObject' attribute is for pointer types only">;
 def err_attributes_are_not_compatible : Error<
   "%0 and %1%select{ attributes|}2 are not compatible">;
+def err_attribute_ivl_nrvo_special_function : Error<
+  "local variables in %select{constructors|destructors}0 cannot be marked [[ivl::nrvo]]">;
+def err_attribute_ivl_nrvo_type_mismatch : Error<
+  "variable of type %0 different from function return type cannot be marked [[ivl::nrvo]]">;
+def err_attribute_ivl_nrvo_reference_return_type : Error<
+  "[[ivl::nrvo]] cannot be used in functions that return reference type">;
+def note_attribute_ivl_nrvo_return_type : Note<
+  "function return type is %0">;
 def err_attribute_invalid_argument : Error<
   "%select{a reference type|an array type|a non-vector or "
   "non-vectorizable scalar type}0 is an invalid argument to attribute %1">;
