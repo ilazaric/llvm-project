@@ -3895,6 +3895,8 @@ bool Sema::DeduceFunctionTypeFromReturnExpr(FunctionDecl *FD,
 StmtResult
 Sema::ActOnReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
                       Scope *CurScope) {
+  // return StmtError();
+  
   ExprResult RetVal = RetValExp;
   if (RetVal.isInvalid())
     return StmtError();
@@ -3914,6 +3916,37 @@ Sema::ActOnReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
         << FSI->getFirstCoroutineStmtKeyword();
   }
 
+  if (!FSI->IvlNrvoVars.empty()) {
+    auto IvlVar = FSI->IvlNrvoVars.back();
+    auto IvlScope = FSI->IvlNrvoVarScope;
+    assert(IvlVar);
+    assert(IvlScope);
+
+    // TODO: refactor "is-indirect-parent" into something
+    auto ScopeCopy = CurScope;
+    while (ScopeCopy && ScopeCopy->getDepth() > IvlScope->getDepth())
+      ScopeCopy = ScopeCopy->getParent();
+
+    // does not apply
+    if (IvlScope != ScopeCopy)
+      goto PostIvlNrvoChecks;
+
+    // applies and is used appropriately
+    // TODO: this should bypass the regular mechanisms that odr-use move constructor
+    if (isa<DeclRefExpr>(RetValExp) &&
+        dyn_cast<VarDecl>(cast<DeclRefExpr>(RetValExp)->getDecl()) == IvlVar) {
+      // TODO: this should be done when it is pushed into FSI->ivlnrvovars
+      CurScope->updateNRVOCandidate(IvlVar);
+      return ReturnStmt::Create(Context, ReturnLoc, RetValExp, IvlVar);
+    }
+
+    auto attr = IvlVar->getAttr<IvlNrvoAttr>();
+    Diag(ReturnLoc, diag::err_attribute_ivl_nrvo_bad_return) << IvlVar->getIdentifier() << RetValExp->getSourceRange();
+    Diag(attr->getLoc(), diag::note_attribute_ivl_nrvo_variable) << attr->getRange();
+    // Move on as-if [[ivl::nrvo]] didn't exist.
+  }
+ PostIvlNrvoChecks:;
+  
   CheckInvalidBuiltinCountedByRef(RetVal.get(),
                                   BuiltinCountedByRefKind::ReturnArg);
 
@@ -3961,6 +3994,7 @@ StmtResult Sema::BuildReturnStmt(SourceLocation ReturnLoc, Expr *RetValExp,
       RetValExp, SupressSimplerImplicitMoves ? SimplerImplicitMoveMode::ForceOff
                                              : SimplerImplicitMoveMode::Normal);
 
+  // TODO: what is this
   if (isa<CapturingScopeInfo>(getCurFunction()))
     return ActOnCapScopeReturnStmt(ReturnLoc, RetValExp, NRInfo,
                                    SupressSimplerImplicitMoves);

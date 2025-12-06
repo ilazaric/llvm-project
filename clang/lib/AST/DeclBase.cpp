@@ -591,6 +591,8 @@ void Decl::markUsed(ASTContext &C) {
   if (isUsed(false))
     return;
 
+  // assert(!isa<CXXConstructorDecl>(this) || cast<CXXConstructorDecl>(this)->isDefaultConstructor());
+
   if (C.getASTMutationListener())
     C.getASTMutationListener()->DeclarationMarkedUsed(this);
 

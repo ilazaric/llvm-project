@@ -7527,6 +7527,7 @@ PerformConstructorInitialization(Sema &S,
             Step.Function.FoundDecl.getDecl())) {
       CalleeDecl = S.findInheritingConstructor(Loc, Constructor, Shadow);
     }
+    // TODO THIS IS BAD TODO
     S.MarkFunctionReferenced(Loc, CalleeDecl);
 
     CurInit = S.CheckForImmediateInvocation(

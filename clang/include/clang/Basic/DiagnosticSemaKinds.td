@@ -3313,8 +3313,12 @@ def err_attribute_ivl_nrvo_reference_return_type : Error<
   "[[ivl::nrvo]] cannot be used in functions that return reference type">;
 def err_attribute_ivl_nrvo_multiple_variables : Error<
   "cannot have multiple variables marked [[ivl::nrvo]] alive at same time">;
+def err_attribute_ivl_nrvo_bad_return : Error<
+  "return statement must return unparenthesized identifier %0 because the variable is declared as [[ivl::nrvo]]">;
+def note_attribute_ivl_nrvo_variable : Note<
+  "variable declared here">;
 def note_attribute_ivl_nrvo_previous_variable : Note<
-  "previous variable here">;
+  "previous variable declared here">;
 def note_attribute_ivl_nrvo_return_type : Note<
   "function return type is %0">;
 def err_attribute_invalid_argument : Error<
